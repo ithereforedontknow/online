@@ -1,0 +1,84 @@
+/* @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"); */
+@import url("/assets/font/Inter_24pt-Regular.ttf");
+body {
+  padding-top: 56px;
+  font-family: "Lato", sans-serif;
+}
+.navbar {
+  background-color: #15294e;
+}
+.navbar-brand {
+  color: white;
+}
+.navbar-brand:hover {
+  color: white;
+}
+.sidebar .nav-link {
+  color: #fff;
+  padding: 15px 20px; /* Increase padding for larger buttons */
+  transition: background-color 0.3s, color 0.3s; /* Transition for hover effect */
+}
+.sidebar .nav-link.active {
+  background-color: #15294e;
+  color: #ffffff;
+}
+.sidebar .nav-link:hover {
+  background-color: #15294e;
+  color: #ffffff;
+}
+
+.content.full-width {
+  margin-left: 0;
+}
+.dropdown-toggle::after {
+  transition: transform 0.2s;
+}
+
+.dropdown-toggle.collapsed::after {
+  transform: rotate(180deg);
+}
+.greetings-item {
+  border-left: 4px solid #1b3667;
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 4px;
+  /* transition: all 0.3s ease; */
+}
+
+/* .greetings-item:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+} */
+
+.greetings-icon {
+  color: #1b3667;
+  margin-right: 10px;
+}
+
+#transaction-data {
+  font-size: 14px;
+}
+
+.notification-item {
+  background-color: #f8f9fa;
+  border-left: 4px solid #1b3667;
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.notification-item:hover {
+  background-color: #e9ecef;
+}
+
+.notification-icon {
+  color: #1b3667;
+  margin-right: 10px;
+}
+
+.btn-primary {
+  background-color: #1b3667;
+  border: inherit;
+}
