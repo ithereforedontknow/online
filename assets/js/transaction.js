@@ -60,138 +60,6 @@ function editTransaction(transaction) {
     transaction.time_of_departure;
   openOffCanvas("#editTransactionOffcanvas");
 }
-$("#status-filter").on("change", async function () {
-  var selectedStatus = $(this).val();
-  if (selectedStatus !== "cancelled") {
-    try {
-      await refreshDepartedList();
-    } catch (error) {
-      console.error("Error refreshing departed transaction list:", error);
-      showError("Failed to retrieve departed transaction list.");
-    }
-  } else {
-    try {
-      await refreshCancelledList();
-    } catch (error) {
-      console.error("Error refreshing cancelled transaction list:", error);
-      showError("Failed to retrieve cancelled transaction list.");
-    }
-  }
-});
-
-async function refreshDepartedList() {
-  try {
-    const response = await $.ajax({
-      url: "../../api/transaction.php",
-      method: "POST",
-      data: { action: "list", status: "departed" },
-      dataType: "json",
-    });
-
-    if (response.success) {
-      const departedList = $("#departed-list");
-      // Destroy the existing DataTable instance if it exists
-      if ($.fn.DataTable.isDataTable("#departed-table")) {
-        $("#departed-table").DataTable().destroy();
-      }
-
-      // Populate the table with transaction data
-      departedList.html(
-        response.data.transactions
-          .map(
-            (transaction) => `<tr>
-                <td class="text-center">${transaction.to_reference}</td>
-                <td class="text-center">${transaction.guia}</td>
-                <td class="text-center">${transaction.hauler_name}</td>
-                <td class="text-center">${transaction.plate_number}</td>
-                <td class="text-center">${transaction.project_name}</td>
-                <td class="text-center">${transaction.origin_name}</td>
-                <td class="text-center">
-                  <form id="edit-transaction-form" class="d-flex justify-content-center align-items-center">
-                    <input type="hidden" id="edit-transaction-id" name="edit-transaction-id" value="${
-                      transaction.transaction_id
-                    }" />
-                    <input type="datetime-local" class="form-control" id="edit-arrival-time" name="edit-arrival-time" required style="width: auto;">
-                    <button type="submit" class="btn btn-primary ms-2">Save</button>
-                  </form>
-                </td>
-                <td class="text-center">
-                  <button type="button" class="btn btn-primary ms-2" onclick='editTransaction(${JSON.stringify(
-                    transaction
-                  )})'>Edit</button>
-                  <button type="button" class="btn btn-secondary ms-2" onclick='cancelTransaction(${
-                    transaction.transaction_id
-                  })'>Cancel</button>
-                  </td>
-                </tr>`
-          )
-          .join("")
-      );
-
-      // Reinitialize the DataTable
-      $("#departed-table").DataTable({
-        responsive: true,
-      });
-    } else {
-      showError(response.message || "Unable to fetch departed transactions.");
-    }
-  } catch (error) {
-    console.error("Error fetching departed transaction list:", error);
-    showError("Failed to retrieve departed transaction list.");
-  }
-}
-
-async function refreshCancelledList() {
-  try {
-    const response = await $.ajax({
-      url: "../../api/transaction.php",
-      method: "POST",
-      data: { action: "list", status: "cancelled" },
-      dataType: "json",
-    });
-
-    if (response.success) {
-      const cancelledList = $("#departed-list");
-
-      // Destroy the existing DataTable instance if it exists
-      if ($.fn.DataTable.isDataTable("#departed-table")) {
-        $("#departed-table").DataTable().destroy();
-      }
-
-      // Populate the table with transaction data
-      cancelledList.html(
-        response.data.transactions
-          .map(
-            (transaction) => `<tr>
-                <td class="text-center">${transaction.to_reference}</td>
-                <td class="text-center">${transaction.guia}</td>
-                <td class="text-center">${transaction.hauler_name}</td>
-                <td class="text-center">${transaction.plate_number}</td>
-                <td class="text-center">${transaction.project_name}</td>
-                <td class="text-center">${transaction.origin_name}</td>
-                <td class="text-center">${"-"}</td>
-                <td class="text-center">
-                  <button type="button" class="btn btn-primary ms-2" onclick="restoreTransaction(${
-                    transaction.transaction_id
-                  })">Restore</button>
-                </td>
-              </tr>`
-          )
-          .join("")
-      );
-
-      // Reinitialize the DataTable
-      $("#departed-table").DataTable({
-        responsive: true,
-      });
-    } else {
-      showError(response.message || "Unable to fetch cancelled transactions.");
-    }
-  } catch (error) {
-    console.error("Error fetching cancelled transaction list:", error);
-    showError("Failed to retrieve cancelled transaction list.");
-  }
-}
 
 $("#add-transaction").submit(async function (e) {
   e.preventDefault();
@@ -298,8 +166,7 @@ $("#add-transaction").submit(async function (e) {
 
   try {
     await transactionManager.createTransaction(data);
-    refreshDepartedList();
-    refreshCancelledList();
+    refreshTransactionList();
     $("#add-transaction").trigger("reset");
   } catch (error) {
     console.error("Transaction creation failed:", error);
@@ -310,7 +177,7 @@ function cancelTransaction(id) {
   transactionManager
     .cancelTransaction(id)
     .then(() => {
-      refreshDepartedList();
+      refreshTransactionList("departed");
     })
     .catch((error) => {
       console.error("Transaction cancellation failed:", error);
@@ -321,13 +188,130 @@ function restoreTransaction(id) {
   transactionManager
     .restoreTransaction(id)
     .then(() => {
-      refreshCancelledList();
+      refreshTransactionList("cancelled");
     })
     .catch((error) => {
       console.error("Transaction restoration failed:", error);
       // Optionally, show an error message to the user
     });
 }
+function refreshTransactionList(status) {
+  const endpoints = {
+    departed: {
+      url: "../../api/transaction.php",
+      data: { action: "list", status: "departed" },
+    },
+    cancelled: {
+      url: "../../api/transaction.php",
+      data: { action: "list", status: "cancelled" },
+    },
+    arrived: {
+      url: "../../api/queue.php",
+      data: { action: "list arrived", status: "arrived" },
+    },
+  };
+
+  const config = endpoints[status];
+  if (!config) return;
+
+  try {
+    $.ajax({
+      url: config.url,
+      method: "POST",
+      data: config.data,
+      dataType: "json",
+    }).then((response) => {
+      if (response.success) {
+        const list = $("#departed-list");
+
+        // Destroy existing DataTable
+        if ($.fn.DataTable.isDataTable("#departed-table")) {
+          $("#departed-table").DataTable().destroy();
+        }
+
+        // Generate appropriate row HTML based on status
+        const rows = response.data.transactions
+          .map((transaction) => {
+            let actionColumn = "";
+            switch (status) {
+              case "departed":
+                actionColumn = `
+                              <td class="text-center">
+                                  <form id="edit-transaction-form" class="d-flex justify-content-center align-items-center">
+                                      <input type="hidden" id="edit-transaction-id" name="edit-transaction-id" value="${
+                                        transaction.transaction_id
+                                      }" />
+                                      <input type="datetime-local" class="form-control" id="edit-arrival-time" name="edit-arrival-time" required style="width: auto;">
+                                      <button type="submit" class="btn btn-primary ms-2">Save</button>
+                                  </form>
+                              </td>
+                              <td class="text-center">
+                                  <button type="button" class="btn btn-primary ms-2" onclick='editTransaction(${JSON.stringify(
+                                    transaction
+                                  )})'>Edit</button>
+                                  <button type="button" class="btn btn-secondary ms-2" onclick='cancelTransaction(${
+                                    transaction.transaction_id
+                                  })'>Cancel</button>
+                              </td>`;
+                break;
+              case "cancelled":
+                actionColumn = `
+                              <td class="text-center">${"-"}</td>
+                              <td class="text-center">
+                                  <button type="button" class="btn btn-primary ms-2" onclick="restoreTransaction(${
+                                    transaction.transaction_id
+                                  })">Restore</button>
+                              </td>`;
+                break;
+              case "arrived":
+                actionColumn = `
+                              <td class="text-center">${transaction.arrival_time}</td>
+                              <td class="text-center">
+                                  <button type="button" class="btn btn-primary ms-2" onclick="queueTransaction(${transaction.transaction_id})">Queue</button>
+                              </td>`;
+                break;
+            }
+
+            return `<tr>
+                      <td class="text-center">${transaction.to_reference}</td>
+                      <td class="text-center">${transaction.guia}</td>
+                      <td class="text-center">${transaction.hauler_name}</td>
+                      <td class="text-center">${transaction.plate_number}</td>
+                      <td class="text-center">${transaction.project_name}</td>
+                      <td class="text-center">${transaction.origin_name}</td>
+                      ${actionColumn}
+                  </tr>`;
+          })
+          .join("");
+
+        list.html(rows);
+
+        // Reinitialize DataTable
+        $("#departed-table").DataTable({
+          responsive: true,
+        });
+      } else {
+        showError(
+          response.message || `Unable to fetch ${status} transactions.`
+        );
+      }
+    });
+  } catch (error) {
+    console.error(`Error fetching ${status} transaction list:`, error);
+    showError(`Failed to retrieve ${status} transaction list.`);
+  }
+}
+
+// Modify the status filter event handler
+$("#status-filter").on("change", function () {
+  const status = $(this).val();
+  if (status) {
+    refreshTransactionList(status);
+  }
+});
+
+// Update document.ready
 $(document).ready(function () {
-  refreshDepartedList().then(() => refreshCancelledList());
+  $("#status-filter").val("departed");
+  refreshTransactionList("departed");
 });

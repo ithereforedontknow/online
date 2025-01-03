@@ -29,7 +29,7 @@ include_once('../../includes/header/header-admin.php');
                 <div class="col-2 text-center" id="project">
                     <a class="text-decoration-none" href="settings-project.php" style="color: #1b3667">
                         <i class="fa-solid fa-sheet-plastic fa-2xl"></i>
-                        <p class="mt-3">Project Description</p>
+                        <p class="mt-3">Projects</p>
                     </a>
                 </div>
                 <div class="col-2 text-center" id="origin">

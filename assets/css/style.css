@@ -152,3 +152,7 @@ body {
 .table-primary {
   background-color: #1b3667;
 }
+#queue-table tbody tr td {
+  background-color: inherit !important;
+  color: inherit !important;
+}

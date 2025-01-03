@@ -6,41 +6,7 @@ include_once('../../includes/header/header-admin.php');
     <div class="container">
         <h1 class="display-5 fw-bold mb-3">Queue Management</h1>
         <div class="row">
-            <!-- <div class="col">
-                <div class="p-4 shadow-sm bg-body rounded text-center">
-                    <h1 class="display-5 fw-bold">Arrived</h1>
-                    <table class="table table-hover text-center">
-                        <thead>
-                            <tr>
-                                <th>Plate Number</th>
-                                <th>Arrival Time</th>
-                                <th>...</th>
-                            </tr>
-                        </thead>
-                        <tbody id="arrived-list">
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM transaction inner join vehicle on transaction.vehicle_id = vehicle.vehicle_id inner join arrival on transaction.transaction_id = arrival.transaction_id where transaction.status = 'arrived' order by arrival_time desc");
-                            $stmt->execute();
-                            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            if (count($result) > 0) {
-                                foreach ($result as $row) {
-                            ?>
-                                    <tr onclick="addToQueue(<?= $row['transaction_id'] ?>)" style="cursor: pointer;">
-                                        <td class="text-center" scope="row"><?= $row['plate_number'] ?></td>
-                                        <td class="text-center" scope="row"><?= date('F j, Y, g:i a', strtotime($row['arrival_time'])) ?></td>
-                                        <td class="text-center" scope="row"><i class="fa-solid fa-arrow-right"></i></td>
-                                    </tr>
-                            <?php
-                                }
-                            } else {
-                                echo "<tr><td colspan='3' class='text-center'>No Arrived Transactions</td></tr>";
-                            }
 
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div> -->
             <div class="col">
                 <div class="p-4 shadow-sm bg-body rounded">
                     <h1 class="display-5 fw-bold text-center">Queue</h1>
@@ -48,8 +14,8 @@ include_once('../../includes/header/header-admin.php');
                     <a class="btn btn-primary" href="view-queue.php">Present Screen</a>
                     <div class="row my-3">
                         <div class="queue-legend mb-3">
-                            <span class="badge bg-primary">Priority</span>
-                            <span class="badge bg-secondary">Regular</span>
+                            <span class="badge bg-primary" style="background-color: rgb(27, 54, 103) !important;">Priority</span>
+                            <span class="badge bg-secondary" style="background-color: #6c757d !important;">Regular</span>
                         </div>
                         <div class="col">
                             <select id="ordinalFilter" class="form-select">
@@ -103,36 +69,7 @@ include_once('../../includes/header/header-admin.php');
                             </tr>
                         </thead>
                         <tbody id="queue-list">
-                            <?php
-                            $sql = "SELECT * FROM transaction 
-                                    INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id 
-                                    INNER JOIN queue ON transaction.transaction_id = queue.transaction_id 
-                                    WHERE transaction.status = 'queue' 
-                                    ORDER BY priority DESC";
-                            $stmt = $conn->prepare($sql);
-                            $stmt->execute();
-                            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            if (count($result) > 0) {
-                                foreach ($result as $row) {
-                                    $rowColor = ($row['priority'] == 1) ? '#1b3667' : 'table-secondary';
-                            ?>
-                                    <tr onclick="viewQueue(<?= $row['transaction_id'] ?>)" style="cursor: pointer; background-color: <?= $rowColor ?>;">
-                                    <tr onclick="viewQueue(<?= $row['transaction_id'] ?>)" style="cursor: pointer;">
-                                        <td class="text-center" scope="row"><?= $row['queue_number'] ?></td>
-                                        <td class="text-center" scope="row"><?= $row['plate_number'] ?></td>
-                                        <td class="text-center" scope="row"><?= $row['ordinal'] ?></td>
-                                        <td class="text-center" scope="row"><?= $row['shift'] ?></td>
-                                        <td class="text-center" scope="row"><?= $row['schedule'] ?></td>
-                                        <td class="text-center" scope="row"><?= $row['transfer_in_line'] ?></td>
-                                        <td class="text-center" scope="row"><i class="fa-solid fa-arrow-right"></i></td>
-                                    </tr>
-                            <?php
-                                }
-                            } else {
-                                echo "<tr><td colspan='8' class='text-center'>No Queued Transactions</td></tr>";
-                            }
 
-                            ?>
                         </tbody>
                     </table>
                 </div>
@@ -144,6 +81,7 @@ include_once('../../includes/header/header-admin.php');
                         <thead>
                             <tr>
                                 <th>Plate Number</th>
+                                <th>Waiting Time</th>
                                 <th>Demurrage</th>
                                 <th>...</th>
                             </tr>

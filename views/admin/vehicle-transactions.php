@@ -23,12 +23,12 @@ include_once('../../includes/header/header-admin.php');
             <div style="width: 200px; flex-shrink: 0;">
                 <select class="form-select" id="status-filter">
                     <option value="departed" selected>Departed</option>
+                    <option value="arrived">Arrived</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
+
             </div>
-            <button class="btn btn-primary ms-2" data-bs-toggle="offcanvas" data-bs-target="#viewArrivedVehicles">
-                <i class="fa-solid fa-magnifying-glass fa-lg me-2" style="color: #ffffff;"></i> View Arrived
-            </button>
+
             <button class="btn btn-primary ms-2" data-bs-toggle="offcanvas" data-bs-target="#addTransactionOffcanvas">
                 <i class="fa-solid fa-plus fa-lg me-2" style="color: #ffffff;"></i> New Transaction
             </button>
@@ -57,6 +57,5 @@ include_once('../../includes/header/header-admin.php');
 
 <?php
 include_once('../../includes/offcanvas/transaction-offcanvas.php');
-include_once('../../includes/offcanvas/arrived-offcanvas.php');
 include_once('../../includes/footer/footer-admin.php');
 ?>

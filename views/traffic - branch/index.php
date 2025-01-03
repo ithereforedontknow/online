@@ -102,7 +102,7 @@ include_once('../../includes/header/header-branch.php');
                             $stmt->execute();
                             $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                            $stmt = $conn->prepare("SELECT * FROM `driver` where `branch` = :branch and `status` = '1'");
+                            $stmt = $conn->prepare("SELECT * FROM `driver` INNER JOIN hauler ON driver.hauler_id = hauler.hauler_id where hauler.branch = :branch and driver.status = '1'");
                             $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
 
                             $stmt->execute();
@@ -125,7 +125,7 @@ include_once('../../includes/header/header-branch.php');
                             $stmt->execute();
                             $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                            $stmt = $conn->prepare("SELECT * FROM `helper` where `branch` = :branch and `status` = '1'");
+                            $stmt = $conn->prepare("SELECT * FROM `helper` INNER JOIN hauler ON helper.hauler_id = hauler.hauler_id where hauler.branch = :branch and helper.status = '1'");
                             $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

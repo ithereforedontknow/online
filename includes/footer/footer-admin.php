@@ -7,6 +7,8 @@
 <script src="../../assets/js/main.js"></script>
 <script src="../../assets/js/user.js"></script>
 <script src="../../assets/js/transaction.js"></script>
+<script src="../../assets/js/queue.js"></script>
+<script src="../../assets/js/settings.js"></script>
 </body>
 
 </html>
