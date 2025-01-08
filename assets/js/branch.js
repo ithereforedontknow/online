@@ -106,110 +106,169 @@ $("#edit-profile-form").submit((event) => {
   });
   // If validation passes, submit the form via AJAX
 });
-$("#add-transaction").submit(function (event) {
+// Enhanced form validation and submission handler
+$("#add-branch-transaction").submit(async function (event) {
   event.preventDefault();
-  function getDatalistValue(input, datalistId) {
-    const value = $(input).val();
+
+  // Improved datalist value getter with type checking
+  const getDatalistValue = (input, datalistId) => {
+    const value = $(input).val()?.trim();
+    if (!value) return null;
+
     const option = $(`#${datalistId} option`).filter(function () {
       return this.value === value;
     });
-    return option.length ? option.data("id") : null;
-  }
-  const hauler_id = getDatalistValue($("#hauler"), "haulers");
-  const vehicle_id = getDatalistValue($("#plate-number"), "plate-numbers");
-  const driver_id = getDatalistValue($("#driver-name"), "driver-names");
-  const helper_id = getDatalistValue($("#helper-name"), "helper-names");
-  const time_of_departure = $("#time-departure").val();
-  if (!hauler_id) {
-    $("#hauler").addClass("is-invalid");
-    $("#hauler").siblings(".invalid-feedback").text("Hauler does not exist");
-    return;
-  } else {
-    $("#hauler").removeClass("is-invalid");
-  }
-  if (!vehicle_id) {
-    $("#plate-number").addClass("is-invalid");
-    $("#plate-number")
-      .siblings(".invalid-feedback")
-      .text("Plate Number does not exist");
-    return;
-  } else {
-    $("#plate-number").removeClass("is-invalid");
-  }
-  if (!driver_id) {
-    $("#driver-name").addClass("is-invalid");
-    $("#driver-name")
-      .siblings(".invalid-feedback")
-      .text("Driver does not exist");
-    return;
-  } else {
-    $("#driver-name").removeClass("is-invalid");
-  }
-  if (!helper_id) {
-    $("#helper-name").addClass("is-invalid");
-    $("#helper-name")
-      .siblings(".invalid-feedback")
-      .text("Helper does not exist");
-    return;
-  } else {
-    $("#helper-name").removeClass("is-invalid");
-  }
-  Swal.fire({
-    title: "Are you sure?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#1c3464",
-    cancelButtonColor: "#6c757d",
-    cancelButtonText: "No",
-    confirmButtonText: "Yes",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const data = {
-        to_reference: $("#to-reference").val(),
-        guia: $("#guia").val(),
-        hauler_id: hauler_id,
-        vehicle_id: vehicle_id,
-        driver_id: driver_id,
-        helper_id: helper_id,
-        project_id: $("#project").val(),
-        no_of_bales: $("#no-of-bales").val(),
-        kilos: $("#kilos").val(),
-        origin_id: $("#origin_id").val(),
-        time_of_departure: time_of_departure,
-      };
-      $.post("./api/add/add-transaction.php", data)
-        .done((result) => {
-          if (result == "Existing TO reference!") {
-            Swal.fire({
-              icon: "error",
-              title: "Existing TO reference!",
-              showConfirmButton: false,
-              timer: 1000,
-            });
-          } else if (result == "Invalid time of departure!") {
-            $("#time-departure").addClass("is-invalid");
-            $("#time-departure")
-              .siblings(".invalid-feedback")
-              .text("Invalid time of departure");
-            return;
-          } else {
-            Swal.fire({
-              title: "Added!",
-              text: "Transaction has been added.",
-              icon: "success",
-              showConfirmButton: false,
-              timer: 1000,
-              didClose: () => {
-                window.location.reload();
-              },
-            });
-          }
-        })
-        .fail((err) => {
-          Swal.fire("Error!", err, "error");
-        });
+    return option.length > 0 ? option.data("id") : null;
+  };
+
+  // Form validation
+  const validateForm = () => {
+    const errors = [];
+
+    // Required field validation
+    const requiredFields = {
+      "TO Reference": "#add-to-reference",
+      GUIA: "#add-guia",
+      Hauler: "#add-hauler",
+      "Plate Number": "#add-plate-number",
+      "Driver Name": "#add-driver-name",
+      "Helper Name": "#add-helper-name",
+      "No of Bales": "#add-no-of-bales",
+      Kilos: "#add-kilos",
+    };
+
+    Object.entries(requiredFields).forEach(([label, selector]) => {
+      if (!$(selector).val()?.trim()) {
+        errors.push(`${label} is required`);
+      }
+    });
+
+    // Numeric validation
+    if (!/^\d+$/.test($("#add-no-of-bales").val())) {
+      errors.push("No of Bales must be a valid number");
     }
-  });
+
+    if (!/^\d+(\.\d{1,2})?$/.test($("#add-kilos").val())) {
+      errors.push("Kilos must be a valid number with up to 2 decimal places");
+    }
+
+    // Time validation
+    const departureTime = new Date($("#add-time-departure").val());
+    if (departureTime < new Date()) {
+      errors.push("Time of Departure cannot be in the past");
+    }
+
+    return errors;
+  };
+
+  // Validate datalist selections
+  const haulerId = getDatalistValue("#add-hauler", "add-haulers");
+  const plateNumberId = getDatalistValue(
+    "#add-plate-number",
+    "add-plate-numbers"
+  );
+  const driverId = getDatalistValue("#add-driver-name", "add-driver-names");
+  const helperId = getDatalistValue("#add-helper-name", "add-helper-names");
+
+  if (!haulerId || !plateNumberId || !driverId || !helperId) {
+    alert(
+      "Please ensure all selection fields are chosen from the provided options."
+    );
+    return;
+  }
+
+  // Validate form
+  const validationErrors = validateForm();
+  if (validationErrors.length > 0) {
+    alert(validationErrors.join("\n"));
+    return;
+  }
+
+  // Prepare form data
+  const formData = {
+    action: "branch add transaction",
+    "to-reference": $("#add-to-reference").val().trim(),
+    guia: $("#add-guia").val().trim(),
+    "hauler-id": haulerId,
+    "vehicle-id": plateNumberId,
+    "driver-id": driverId,
+    "helper-id": helperId,
+    "project-id": $("#add-project").val(),
+    "no-of-bales": $("#add-no-of-bales").val(),
+    kilos: $("#add-kilos").val(),
+    "origin-id": $("#add-origin_id").val(),
+    "time-departure": $("#add-time-departure").val(),
+  };
+
+  try {
+    const response = await fetch("../../api/transaction.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      alert("Transaction successfully added!");
+      $("#add-branch-transaction")[0].reset();
+      // Optionally refresh any related data displays
+      if (typeof refreshTransactionList === "function") {
+        refreshTransactionList();
+      }
+    } else {
+      alert(
+        result.message || "An error occurred while saving the transaction."
+      );
+    }
+  } catch (error) {
+    console.error("Error submitting transaction:", error);
+    alert("A network error occurred. Please try again later.");
+  }
+});
+
+// Enhanced TO Reference formatter
+$("#add-to-reference").on("blur", function () {
+  const originCode = "<?= $originCode ?>";
+  let value = this.value.trim().toUpperCase();
+
+  // Remove any existing origin code suffix
+  value = value.replace(new RegExp(`-${originCode}$`), "");
+
+  // Add the origin code suffix
+  this.value = `${value}-${originCode}`;
+
+  // Validate format
+  const referencePattern = /^\d{1,4}-[A-Z]{2}$/;
+  if (!referencePattern.test(this.value)) {
+    $(this).addClass("is-invalid");
+    $(".invalid-feedback").text(
+      "Invalid TO Reference format. Expected: XXXX-XX"
+    );
+  } else {
+    $(this).removeClass("is-invalid");
+  }
+});
+
+// Clear form handler
+$("#add-clear").click(function () {
+  if (confirm("Are you sure you want to clear all fields?")) {
+    $("#add-branch-transaction")[0].reset();
+    $(".is-invalid").removeClass("is-invalid");
+  }
+});
+
+// Real-time numeric validation
+$("#add-no-of-bales, #add-kilos").on("input", function () {
+  const value = this.value;
+  const isKilos = this.id === "add-kilos";
+  const pattern = isKilos ? /^\d*\.?\d{0,2}$/ : /^\d*$/;
+
+  if (!pattern.test(value)) {
+    this.value = value.slice(0, -1);
+  }
 });
 
 $("#to-reference, #no-of-bales, #kilos").on("input", function (e) {

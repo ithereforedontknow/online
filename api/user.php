@@ -32,12 +32,44 @@ class UserManager
     public function createUser($fname, $lname, $mname, $email, $username, $password, $userlevel, $branch)
     {
         try {
-            // Hash the password
-            $status = '1';
+            $sql = "SELECT * FROM users WHERE username = :username";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'username' => $username
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Username already exists!');
+                return;
+            }
+
+            $sql = "SELECT * FROM users WHERE fname = :fname AND mname = :mname AND lname = :lname";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'fname' => $fname,
+                'mname' => $mname,
+                'lname' => $lname
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'User already exists!');
+                return;
+            }
+
+            $sql = "SELECT * FROM users WHERE email = :email";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'email' => $email
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Email already exists!');
+                return;
+            }
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
             // Prepare statement to prevent SQL injection
-            $stmt = $this->conn->prepare("INSERT INTO users (fname, lname, mname, email, username, password, userlevel, status, branch) VALUES (:fname, :lname, :mname, :email, :username, :hashed_password, :userlevel, :status, :branch)");
+            $stmt = $this->conn->prepare("INSERT INTO users (fname, lname, mname, email, username, password, userlevel, branch) VALUES (:fname, :lname, :mname, :email, :username, :hashed_password, :userlevel, :branch)");
             $stmt->execute([
                 'fname' => $fname,
                 'lname' => $lname,
@@ -46,7 +78,6 @@ class UserManager
                 'username' => $username,
                 'hashed_password' => $hashedPassword,
                 'userlevel' => $userlevel,
-                'status' => $status,
                 'branch' => $branch
             ]);
 
@@ -60,6 +91,43 @@ class UserManager
     public function updateUser($id, $fname, $lname, $mname, $email, $password, $username, $userlevel, $branch)
     {
         try {
+            $sql = "SELECT * FROM users WHERE username = :username AND id != :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'username' => $username,
+                'id' => $id
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Username already exists! Please choose a different username.');
+                return;
+            }
+
+            $sql = "SELECT * FROM users WHERE fname = :fname, mname = :mname, lname = :lname AND id != :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'fname' => $fname,
+                'mname' => $mname,
+                'lname' => $lname,
+                'id' => $id
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'User already exists! Please choose a different name.');
+                return;
+            }
+
+            $sql = "SELECT * FROM users WHERE email = :email AND id != :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'email' => $email,
+                'id' => $id
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Email already exists! Please choose a different email.');
+                return;
+            }
             // Prepare statement to prevent SQL injection
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $this->conn->prepare("UPDATE users SET fname = :fname, lname = :lname, mname = :mname, email = :email, username = :username, password = :hashed_password, userlevel = :userlevel, branch = :branch WHERE id = :id");

@@ -9,11 +9,6 @@ include_once('../../includes/header/header-admin.php');
                 <thead>
                     <tr>
                         <th class="text-center" scope="col">To Reference</th>
-                        <!-- <th class="text-center" scope="col">GUIA</th> -->
-                        <th class="text-center" scope="col">Unloading Time End</th>
-                        <th class="text-center" scope="col">Time of Departure</th>
-                        <th class="text-center" scope="col">Demurrage</th>
-                        <th class="text-center" scope="col">Kilos</th>
                         <th class="text-center" scope="col" style="width:15%">Transfer Out Net Weight kg</th>
                         <th class="text-center" scope="col">Scrap kg</th>
                         <th class="text-center" scope="col">Remarks</th>

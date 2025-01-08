@@ -21,7 +21,6 @@ const transactionManager = {
   async createTransaction(data) {
     return this.request("create", data);
   },
-
   async updateTransaction(data) {
     return this.request("update", data);
   },
@@ -195,6 +194,66 @@ function restoreTransaction(id) {
       // Optionally, show an error message to the user
     });
 }
+// Event delegation for dynamically created forms
+$(document).on("submit", ".arrival-transaction-form", async function (event) {
+  event.preventDefault();
+
+  // Gather data from the form
+  const transactionId = $(this).find("#arrival-transaction-id").val();
+  const arrivalTime = $(this).find("#arrival-arrival-time").val();
+
+  // Validate data
+  if (!transactionId || !arrivalTime) {
+    Swal.fire({
+      title: "Error",
+      text: "Transaction ID and Arrival Time are required.",
+      icon: "error",
+      confirmButtonText: "OK",
+    });
+    return;
+  }
+
+  const data = {
+    action: "add to arrived",
+    transaction_id: transactionId,
+    arrival_time: arrivalTime,
+  };
+
+  try {
+    // Send data to the server
+    const response = await $.ajax({
+      url: "../../api/transaction.php",
+      method: "POST",
+      data: data,
+      dataType: "json",
+    });
+
+    // Handle server response
+    if (response.success) {
+      Swal.fire({
+        title: "Updated!",
+        text: "Transaction added to arrived successfully.",
+        icon: "success",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+
+      // Refresh transaction list
+      refreshTransactionList("departed");
+    } else {
+      throw new Error(response.message || "Unknown error occurred.");
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    Swal.fire({
+      title: "Error",
+      text: error.message || "Failed to add transaction to arrived.",
+      icon: "error",
+      confirmButtonText: "OK",
+    });
+  }
+});
+
 function refreshTransactionList(status) {
   const endpoints = {
     departed: {
@@ -237,11 +296,11 @@ function refreshTransactionList(status) {
               case "departed":
                 actionColumn = `
                               <td class="text-center">
-                                  <form id="edit-transaction-form" class="d-flex justify-content-center align-items-center">
-                                      <input type="hidden" id="edit-transaction-id" name="edit-transaction-id" value="${
+                                  <form class="arrival-transaction-form d-flex justify-content-center align-items-center">
+                                      <input type="hidden" id="arrival-transaction-id" name="arrival-transaction-id" value="${
                                         transaction.transaction_id
                                       }" />
-                                      <input type="datetime-local" class="form-control" id="edit-arrival-time" name="edit-arrival-time" required style="width: auto;">
+                                      <input type="datetime-local" class="form-control" id="arrival-arrival-time" name="arrival-arrival-time" required style="width: auto;">
                                       <button type="submit" class="btn btn-primary ms-2">Save</button>
                                   </form>
                               </td>
@@ -289,6 +348,7 @@ function refreshTransactionList(status) {
         // Reinitialize DataTable
         $("#departed-table").DataTable({
           responsive: true,
+          lengthChange: false,
         });
       } else {
         showError(

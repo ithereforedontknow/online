@@ -11,6 +11,7 @@
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-username" name="username" required>
                         <label for="add-username">Username</label>
+                        <div class="invalid-feedback">Username already exists.</div>
                     </div>
                 </div>
                 <div class="col">
@@ -43,24 +44,29 @@
             <div class="form-floating mb-4">
                 <input type="text" class="form-control" id="add-fname" name="fname" required>
                 <label for="add-fname" class="form-label">First Name</label>
+                <div class="invalid-feedback">User already exists.</div>
             </div>
 
             <div class="form-floating mb-4">
                 <input type="text" class="form-control" id="add-mname" name="mname" required>
                 <label for="add-mname" class="form-label">Middle Name</label>
+                <div class="invalid-feedback">User already exists.</div>
             </div>
 
             <div class="form-floating mb-4">
                 <input type="text" class="form-control" id="add-lname" name="lname" required>
                 <label for="add-lname" class="form-label">Last Name</label>
+                <div class="invalid-feedback">User already exists.</div>
             </div>
             <div class="form-floating mb-4">
                 <input type="password" class="form-control" id="add-password" name="password" required>
                 <label for="add-password" class="form-label">Password</label>
+                <div class="invalid-feedback">Password must be at least 8 characters long.</div>
             </div>
             <div class="form-floating mb-4">
                 <input type="email" class="form-control" id="add-email" name="email" required>
                 <label for="add-email" class="form-label">Email</label>
+                <div class="invalid-feedback">Choose a different email.</div>
             </div>
 
         </form>
@@ -83,6 +89,7 @@
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-username" name="username" required>
                         <label for="edit-username">Username</label>
+                        <div class="invalid-feedback">Username already exists.</div>
                     </div>
                 </div>
                 <div class="col">
@@ -114,22 +121,27 @@
             <div class="form-floating mb-4">
                 <input type="text" class="form-control" id="edit-fname" name="fname" required>
                 <label for="edit-fname" class="form-label">First Name</label>
+                <div class="invalid-feedback">User already exists.</div>
             </div>
             <div class="form-floating mb-4">
                 <input type="text" class="form-control" id="edit-mname" name="mname" required>
                 <label for="edit-mname" class="form-label">Middle Name</label>
+                <div class="invalid-feedback">User already exists.</div>
             </div>
             <div class="form-floating mb-4">
                 <input type="text" class="form-control" id="edit-lname" name="lname" required>
                 <label for="edit-lname" class="form-label">Last Name</label>
+                <div class="invalid-feedback">User already exists.</div>
             </div>
             <div class="form-floating mb-4">
                 <input type="password" class="form-control" id="edit-password" name="password" required>
                 <label for="edit-password" class="form-label">Password</label>
+                <div class="invalid-feedback">Password must be at least 8 characters long.</div>
             </div>
             <div class="form-floating mb-4">
                 <input type="email" class="form-control" id="edit-email" name="email" required>
                 <label for="edit-email" class="form-label">Email</label>
+                <div class="invalid-feedback">Choose a different email.</div>
             </div>
         </form>
     </div>

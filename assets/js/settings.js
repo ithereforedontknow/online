@@ -13,18 +13,105 @@ const settingsManager = {
       }
       return response;
     } catch (error) {
-      if (error.message === "Hauler already exists!") {
-        $("#add-hauler-name")
-          .addClass("is-invalid")
-          .siblings(".invalid-feedback");
-        return;
-      } else if (error.message === "Plate number already exists!") {
-        $("#add-plate-no").addClass("is-invalid").siblings(".invalid-feedback");
-        return;
-      } else {
-        console.error("Error:", error.message);
-        showError(error.message || "An unexpected error occurred.");
-        throw error;
+      switch (error.message) {
+        case "Hauler already exists!":
+          $("#add-hauler-name")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Hauler already exists! Please choose a different name.":
+          $("#edit-hauler-name")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Plate number already exists! Please choose a different plate number.":
+          $("#edit-plate-no")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Plate number already exists!":
+          $("#add-plate-no")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Driver already exist!":
+          $("#add-driver-fname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#add-driver-mname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#add-driver-lname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Phone number already exist!":
+          $("#add-driver-phone")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Driver already exist! Please try again.":
+          $("#edit-driver-fname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#edit-driver-lname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#edit-driver-mname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Phone number already exist! Please try again.":
+          $("#edit-driver-phone")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Helper already exist!":
+          $("#add-helper-fname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#add-helper-mname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#add-helper-lname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Helper Phone number already exist!":
+          $("#add-helper-phone")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Helper already exist! Please try again.":
+          $("#edit-helper-fname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#edit-helper-lname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          $("#edit-helper-mname")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Helper Phone number already exist! Please try again.":
+          $("#edit-helper-phone")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Project already exist!":
+          $("#add-project-name")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Project already exist! Please try again.":
+          $("#edit-project-name")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        default:
+          console.error("Error:", error.message);
+          showError(error.message || "An unexpected error occurred.");
+          throw error;
       }
     }
   },
@@ -74,6 +161,18 @@ function editHelper(helper) {
   $("#edit-helper-lname").val(helper.helper_lname);
   $("#edit-helper-phone").val(helper.helper_phone);
   openModal("#editHelperModal");
+}
+function editProject(project) {
+  $("#edit-project-id").val(project.project_id);
+  $("#edit-project-name").val(project.project_name);
+  $("#edit-description").val(project.project_description);
+  openModal("#editProjectModal");
+}
+function editOrigin(origin) {
+  $("#edit-origin-id").val(origin.origin_id);
+  $("#edit-origin-name").val(origin.origin_name);
+  $("#edit-origin-code").val(origin.origin_code);
+  openModal("#editOriginModal");
 }
 $("#add-hauler").submit(async function (e) {
   e.preventDefault();
@@ -238,6 +337,87 @@ $("#edit-helper").submit(async function (e) {
   } catch (error) {
     console.error("Error updating helper:", error);
     showError("An error occurred while updating the helper.");
+  }
+});
+$("#add-project").submit(async function (e) {
+  e.preventDefault();
+  try {
+    const response = await settingsManager.request("create project", {
+      project_name: $("#add-project-name").val(),
+      project_description: $("#add-description").val(),
+    });
+    if (response.success) {
+      refreshProjectsList();
+      $("#addProjectModal").modal("hide");
+    }
+  } catch (error) {
+    console.error("Error creating project:", error);
+    showError("An error occurred while creating the project.");
+  }
+});
+$("#edit-project").submit(async function (e) {
+  e.preventDefault();
+  try {
+    const response = await settingsManager.request("update project", {
+      project_id: $("#edit-project-id").val(),
+      project_name: $("#edit-project-name").val(),
+      project_description: $("#edit-description").val(),
+    });
+    if (response.success) {
+      refreshProjectsList();
+      $("#editProjectModal").modal("hide");
+    }
+  } catch (error) {
+    console.error("Error updating project:", error);
+    showError("An error occurred while updating the project.");
+  }
+});
+$("#add-origin").submit(async function (e) {
+  e.preventDefault();
+  try {
+    const response = await settingsManager.request("create origin", {
+      origin_name: $("#add-origin-name").val(),
+      origin_code: $("#add-origin-code").val(),
+    });
+    if (response.success) {
+      refreshOriginList();
+      $("#addOriginModal").modal("hide");
+    }
+  } catch (error) {
+    console.error("Error creating origin:", error);
+    showError("An error occurred while creating the origin.");
+  }
+});
+$("#edit-origin").submit(async function (e) {
+  e.preventDefault();
+  try {
+    const response = await settingsManager.request("update origin", {
+      origin_id: $("#edit-origin-id").val(),
+      origin_name: $("#edit-origin-name").val(),
+      origin_code: $("#edit-origin-code").val(),
+    });
+    if (response.success) {
+      refreshOriginList();
+      $("#editOriginModal").modal("hide");
+    }
+  } catch (error) {
+    console.error("Error updating origin:", error);
+    showError("An error occurred while updating the origin.");
+  }
+});
+$("#edit-demurrage").submit(async function (e) {
+  e.preventDefault();
+  try {
+    const response = await settingsManager.request("update demurrage", {
+      demurrage: $("#edit-demurrage-value").val(),
+    });
+    if (response.success) {
+      refreshDemurrage(); // Call the function to refresh the demurrage list
+      $("#settingsDemurrageModal").modal("hide"); // Close the modal
+    }
+  } catch (error) {
+    console.error("Error updating demurrage:", error);
+    showError("An error occurred while updating the demurrage.");
   }
 });
 async function refreshHaulersList() {
@@ -436,9 +616,141 @@ async function refreshHelpersList() {
     showError("Failed to retrieve helper transaction list.");
   }
 }
+async function refreshProjectsList() {
+  try {
+    const response = await $.ajax({
+      url: "../../api/settings.php",
+      method: "POST",
+      data: { action: "list projects" },
+      dataType: "json",
+    });
+    if (response.success) {
+      const projectList = $("#project-list");
+      // Destroy the existing DataTable instance if it exists
+      if ($.fn.DataTable.isDataTable("#project-table")) {
+        $("#project-table").DataTable().destroy();
+      }
+      // Populate the table with transaction data
+      projectList.html(
+        response.data
+          .map((project) => {
+            return `<tr onclick='editProject(${JSON.stringify(
+              project
+            )})' style="cursor: pointer;">
+                          <td class="text-center">${project.project_name}</td>
+                          <td class="text-center">${
+                            project.project_description
+                          }</td>    
+                        
+                          <td class="text-center"><i class="fa-solid fa-arrow-right"></i></td>
+                          </tr>`;
+          })
+          .join("")
+      );
+
+      // Reinitialize the DataTable with row callback
+      $("#project-table").DataTable({
+        responsive: true,
+        ordering: false,
+        lengthChange: false,
+      });
+    } else {
+      showError(response.message);
+    }
+  } catch (error) {
+    console.error("Error fetching project transaction list:", error);
+    showError("Failed to retrieve project transaction list.");
+  }
+}
+async function refreshOriginList() {
+  try {
+    const response = await $.ajax({
+      url: "../../api/settings.php",
+      method: "POST",
+      data: { action: "list origins" },
+      dataType: "json",
+    });
+    if (response.success) {
+      const originList = $("#origin-list");
+      // Destroy the existing DataTable instance if it exists
+      if ($.fn.DataTable.isDataTable("#origin-table")) {
+        $("#origin-table").DataTable().destroy();
+      }
+      // Populate the table with transaction data
+      originList.html(
+        response.data
+          .map((origin) => {
+            return `<tr onclick='editOrigin(${JSON.stringify(
+              origin
+            )})' style="cursor: pointer;">
+                          <td class="text-center">${origin.origin_name}</td>    
+                          <td class="text-center">${origin.origin_code}</td>
+                          <td class="text-center"><i class="fa-solid fa-arrow-right"></i></td>
+                          </tr>`;
+          })
+          .join("")
+      );
+
+      // Reinitialize the DataTable with row callback
+      $("#origin-table").DataTable({
+        responsive: true,
+        ordering: false,
+        lengthChange: false,
+      });
+    } else {
+      showError(response.message);
+    }
+  } catch (error) {
+    console.error("Error fetching origin transaction list:", error);
+    showError("Failed to retrieve origin transaction list.");
+  }
+}
+async function refreshDemurrage() {
+  try {
+    const response = await $.ajax({
+      url: "../../api/settings.php",
+      method: "POST",
+      data: { action: "list demurrage" },
+      dataType: "json",
+    });
+    if (response.success) {
+      const demurrageList = $("#demurrage-list");
+      // Destroy the existing DataTable instance if it exists
+      if ($.fn.DataTable.isDataTable("#demurrage-table")) {
+        $("#demurrage-table").DataTable().destroy();
+      }
+      // Populate the table with transaction data
+      demurrageList.html(
+        response.data
+          .map((demurrage) => {
+            return `<tr>
+                          <td class="text-center">${demurrage.demurrage}</td>    
+                          <td class="text-center">${demurrage.updated_at}</td>
+                          </tr>`;
+          })
+          .join("")
+      );
+
+      // Reinitialize the DataTable with row callback
+      $("#demurrage-table").DataTable({
+        responsive: true,
+        ordering: false,
+        lengthChange: false,
+      });
+    } else {
+      showError(response.message);
+    }
+  } catch (error) {
+    console.error("Error fetching demurrage transaction list:", error);
+    showError("Failed to retrieve demurrage transaction list.");
+  }
+}
 $(document).ready(() => {
   refreshVehicleList();
   refreshHaulersList();
   refreshDriversList();
   refreshHelpersList();
+  refreshProjectsList();
+  refreshOriginList();
+  refreshDemurrage();
 });

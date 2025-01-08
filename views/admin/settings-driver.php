@@ -72,19 +72,22 @@ include_once('../../includes/header/header-admin.php');
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-driver-fname" name="add-driver-fname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="driver-fname">First Name</label>
+                        <div class="invalid-feedback">Driver already exist.</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-driver-mname" name="add-driver-mname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="add-driver-mname">Middle Name</label>
+                        <div class="invalid-feedback">Driver already exist.</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-driver-lname" name="add-driver-lname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="add-driver-lname">Last Name</label>
+                        <div class="invalid-feedback">Driver already exist.</div>
                     </div>
                     <div class="form-floating">
                         <input type="tel" class="form-control" id="add-driver-phone" name="add-driver-phone" required maxlength="11" pattern="09\d{9}" oninput="this.setCustomValidity('')" oninvalid="this.setCustomValidity('Please enter a valid phone number.')"><br>
                         <label for="add-driver-phone">Phone Number</label>
-                        <div class="invalid-feedback">Please enter a valid phone number.</div>
+                        <div class="invalid-feedback">Phone number already exist.</div>
                     </div>
                 </form>
             </div>
@@ -120,19 +123,25 @@ include_once('../../includes/header/header-admin.php');
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-helper-fname" name="add-helper-fname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="add-helper-fname">First Name</label>
+                        <div class="invalid-feedback">Helper already exist.</div>
+
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-helper-mname" name="add-helper-mname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="add-helper-mname">Middle Name</label>
+                        <div class="invalid-feedback">Helper already exist.</div>
+
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="add-helper-lname" name="add-helper-lname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="add-helper-lname">Last Name</label>
+                        <div class="invalid-feedback">Helper already exist.</div>
+
                     </div>
                     <div class="form-floating">
                         <input type="tel" class="form-control" id="add-helper-phone" name="add-helper-phone" required pattern="09\d{9}" maxlength="11" oninput="this.setCustomValidity('')" oninvalid="this.setCustomValidity('Please enter a valid phone number.')"><br>
                         <label for="add-helper-phone">Phone Number</label>
-                        <div class="invalid-feedback">Please enter a valid phone number.</div>
+                        <div class="invalid-feedback">Phone number already exist.</div>
                     </div>
                 </form>
             </div>
@@ -169,19 +178,22 @@ include_once('../../includes/header/header-admin.php');
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-driver-fname" name="edit-driver-fname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="edit-driver-fname">First Name</label>
+                        <div class="invalid-feedback">Driver already exist.</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-driver-mname" name="edit-driver-mname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="edit-driver-mname">Middle Name</label>
+                        <div class="invalid-feedback">Driver already exist.</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-driver-lname" name="edit-driver-lname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="edit-driver-lname">Last Name</label>
+                        <div class="invalid-feedback">Driver already exist.</div>
                     </div>
                     <div class="form-floating">
                         <input type="tel" class="form-control" id="edit-driver-phone" name="edit-driver-phone" required pattern="09\d{9}" maxlength="11" oninput="this.setCustomValidity('')" oninvalid="this.setCustomValidity('Please enter a valid phone number.')">
                         <label for="edit-driver-phone">Phone Number</label>
-                        <div class="invalid-feedback">Please enter a valid phone number.</div>
+                        <div class="invalid-feedback">Phone number already exist.</div>
                     </div>
                 </form>
             </div>
@@ -218,19 +230,22 @@ include_once('../../includes/header/header-admin.php');
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-helper-fname" name="edit-helper-fname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="edit-helper-fname">First Name</label>
+                        <div class="invalid-feedback">Helper already exist.</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-helper-mname" name="edit-helper-mname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="edit-helper-mname">Middle Name</label>
+                        <div class="invalid-feedback">Helper already exist.</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-helper-lname" name="edit-helper-lname" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '');">
                         <label for="edit-helper-lname">Last Name</label>
+                        <div class="invalid-feedback">Helper already exist.</div>
                     </div>
                     <div class="form-floating">
                         <input type="tel" class="form-control" id="edit-helper-phone" name="edit-helper-phone" required maxlength="11" pattern="09\d{9}" oninput="this.setCustomValidity('')" oninvalid="this.setCustomValidity('Please enter a valid phone number.')"><br>
                         <label for="edit-helper-phone">Phone Number</label>
-                        <div class="invalid-feedback">Please enter a valid phone number.</div>
+                        <div class="invalid-feedback">Phone number already exist.</div>
                     </div>
                 </form>
             </div>

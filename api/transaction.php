@@ -25,6 +25,86 @@ class TransactionManager
         echo json_encode($response);
         exit;
     }
+    public function addBranchTransaction($data)
+    {
+        try {
+            $this->conn->beginTransaction();
+
+            // Validate TO Reference
+            $stmt = $this->conn->prepare("
+                SELECT 1 FROM transaction 
+                WHERE to_reference = :to_reference
+            ");
+            $stmt->execute(['to_reference' => $data['to-reference']]);
+            if ($stmt->rowCount() > 0) {
+                throw new Exception('TO Reference already exists');
+            }
+
+            // Validate time of departure
+            if (strtotime($data['time-departure']) < strtotime(date('Y-m-d H:i:s'))) {
+                throw new Exception('Time of Departure cannot be in the past');
+            }
+
+            // Validate driver availability
+            $stmt = $this->conn->prepare("
+                SELECT 1 FROM transaction 
+                WHERE driver_id = :driver_id 
+                AND status = 'departed'
+            ");
+            $stmt->execute(['driver_id' => $data['driver-id']]);
+            if ($stmt->rowCount() > 0) {
+                throw new Exception('Driver is currently assigned to another transaction');
+            }
+
+            // Validate helper availability
+            $stmt = $this->conn->prepare("
+                SELECT 1 FROM transaction 
+                WHERE helper_id = :helper_id 
+                AND status = 'departed'
+            ");
+            $stmt->execute(['helper_id' => $data['helper-id']]);
+            if ($stmt->rowCount() > 0) {
+                throw new Exception('Helper is currently assigned to another transaction');
+            }
+
+            // Insert transaction
+            $stmt = $this->conn->prepare("
+                INSERT INTO transaction (
+                    to_reference, guia, hauler_id, vehicle_id, 
+                    driver_id, helper_id, project_id, no_of_bales, 
+                    kilos, origin_id, time_of_departure, status,
+                    created_at
+                ) VALUES (
+                    :to_reference, :guia, :hauler_id, :vehicle_id,
+                    :driver_id, :helper_id, :project_id, :no_of_bales,
+                    :kilos, :origin_id, :time_of_departure, 'departed',
+                    NOW()
+                )
+            ");
+
+            $stmt->execute([
+                'to_reference' => $data['to-reference'],
+                'guia' => $data['guia'],
+                'hauler_id' => $data['hauler-id'],
+                'vehicle_id' => $data['vehicle-id'],
+                'driver_id' => $data['driver-id'],
+                'helper_id' => $data['helper-id'],
+                'project_id' => $data['project-id'],
+                'no_of_bales' => $data['no-of-bales'],
+                'kilos' => $data['kilos'],
+                'origin_id' => $data['origin-id'],
+                'time_of_departure' => $data['time-departure']
+            ]);
+
+            $this->conn->commit();
+            $this->sendResponse(true, 'Transaction added successfully');
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            error_log('Transaction error: ' . $e->getMessage());
+            $this->sendResponse(false, $e->getMessage());
+        }
+    }
+
     public function getTransactions(string $status): void
     {
         $sql = 'SELECT * FROM transaction
@@ -126,6 +206,26 @@ class TransactionManager
             $this->sendResponse(false, 'Error restoring transaction');
         }
     }
+    public function addToArrived($transaction_id, $arrival_time, $arrival_date)
+    {
+        try {
+            $stmt = $this->conn->prepare("INSERT INTO arrival (transaction_id, arrival_time, arrival_date) VALUES (:transaction_id, :arrival_time, :arrival_date)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':arrival_time' => $arrival_time,
+                ':arrival_date' => $arrival_date
+            ]);
+            $stmt = $this->conn->prepare("UPDATE transaction SET status = 'arrived' WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id
+            ]);
+            $this->sendResponse(true, 'Transaction added to arrived successfully');
+        } catch (PDOException $e) {
+            // Log the error (in a production environment, log to a file)
+            error_log('Database error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Error adding transaction to arrived');
+        }
+    }
 }
 
 // Main API Handler
@@ -139,6 +239,9 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
         switch ($action) {
+            case 'branch add transaction':
+                $transactionManager->addBranchTransaction($_POST);
+                break;
             case 'list':
                 $status = $_POST['status'] ?? 'departed';
                 $transactionManager->getTransactions($status);
@@ -161,6 +264,18 @@ try {
                 } else {
                     $transactionManager->sendResponse(false, 'Missing transaction ID');
                 }
+                break;
+            case 'add to arrived':
+                $transaction_id = $_POST['transaction_id'] ?? null;
+                $arrival_time = $_POST['arrival_time'] ?? null;
+                $arrival_date = date('Y-m-d', strtotime($_POST['arrival_time'] ?? null));
+                if ($transaction_id && $arrival_time) {
+                    $transactionManager->addToArrived($transaction_id, $arrival_time, $arrival_date);
+                } else {
+                    $transactionManager->sendResponse(false, 'Missing transaction ID or arrival time');
+                }
+                break;
+
             default:
                 $transactionManager->sendResponse(false, 'Invalid action');
         }

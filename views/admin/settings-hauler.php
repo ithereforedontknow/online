@@ -79,6 +79,7 @@ include_once('../../includes/header/header-admin.php');
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-hauler-name" name="edit-hauler-name" required>
                         <label for="edit-hauler-name">Hauler</label>
+                        <div class="invalid-feedback">Hauler already exists!</div>
                     </div>
                     <div class="form-floating mb-4">
                         <select class="form-select" id="edit-hauler-branch" name="edit-hauler-branch" required>

@@ -13,9 +13,38 @@ const userManager = {
       }
       return response;
     } catch (error) {
-      console.error("Error:", error.message);
-      showError(error.message || "An unexpected error occurred.");
-      throw error;
+      switch (error.message) {
+        case "Username already exists!":
+          $("#add-username")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Username already exists! Please choose a different username.":
+          $("#edit-username")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "User already exists!":
+          $("#add-fname").addClass("is-invalid").siblings(".invalid-feedback");
+          $("#add-mname").addClass("is-invalid").siblings(".invalid-feedback");
+          $("#add-lname").addClass("is-invalid").siblings(".invalid-feedback");
+          break;
+        case "User already exists! Please choose a different name.":
+          $("#edit-fname").addClass("is-invalid").siblings(".invalid-feedback");
+          $("#edit-mname").addClass("is-invalid").siblings(".invalid-feedback");
+          $("#edit-lname").addClass("is-invalid").siblings(".invalid-feedback");
+          break;
+        case "Email already exists!":
+          $("#add-email").addClass("is-invalid").siblings(".invalid-feedback");
+          break;
+        case "Email already exists! Please choose a different email.":
+          $("#edit-email").addClass("is-invalid").siblings(".invalid-feedback");
+          break;
+        default:
+          console.error("Error:", error.message);
+          showError(error.message || "An unexpected error occurred.");
+          throw error;
+      }
     }
   },
 
@@ -209,16 +238,18 @@ $("#edit-user-form, #add-user-form").submit(async function (event) {
       $(`#${isEditForm ? "editUserOffcanvas" : "addUserOffcanvas"}`).offcanvas(
         "hide"
       );
+      $form.find(".is-invalid").removeClass("is-invalid");
+      $form.find(".invalid-feedback").hide();
 
       // Reset form
       $form[0].reset();
     } else {
       // Show error message
-      showError(response.message || `Failed to ${action} user`);
+      showError(response.message || `Failed to  user`);
     }
   } catch (error) {
-    console.error(`Error ${action}ing user:`, error);
-    showError(`Failed to ${action} user`);
+    console.error(`Error creating user:`, error);
+    showError(`Failed to user`);
   }
 });
 
@@ -253,6 +284,7 @@ function validateUserData(userData, action) {
 
   // Password strength (optional, adjust as needed)
   if (userData.password.length < 8) {
+    $("#add-password").addClass("is-invalid").siblings(".invalid-feedback");
     showError("Password must be at least 8 characters long");
     return false;
   }

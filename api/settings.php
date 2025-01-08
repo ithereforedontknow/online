@@ -67,6 +67,19 @@ class settingsManager
     public function updateHauler($id, $name, $branch, $address)
     {
         try {
+            $sql = "SELECT * FROM hauler WHERE hauler_name = :name AND hauler_id != :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'name' => $name,
+                'id' => $id
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Hauler already exists! Please choose a different name.');
+                return;
+            }
+
+            // Proceed with the update
             $sql = "UPDATE hauler SET hauler_name = :name, branch = :branch, hauler_address = :address WHERE hauler_id = :id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -75,12 +88,14 @@ class settingsManager
                 'address' => $address,
                 'id' => $id
             ]);
+
             $this->sendResponse(true, 'Hauler updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
             $this->sendResponse(false, 'Internal server error');
         }
     }
+
     public function toggleHaulerStatus($id, $status)
     {
         try {
@@ -142,6 +157,17 @@ class settingsManager
     public function updateVehicle($id, $plate_number, $truck_type, $hauler_id)
     {
         try {
+            $sql = "SELECT * FROM vehicle WHERE plate_number = :plate_number AND vehicle_id != :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'plate_number' => $plate_number,
+                'id' => $id
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Plate number already exists! Please choose a different plate number.');
+                return;
+            }
             $sql = "UPDATE vehicle SET plate_number = :plate_number, truck_type = :truck_type, hauler_id = :hauler_id WHERE vehicle_id = :id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -185,6 +211,27 @@ class settingsManager
     public function addDriver($hauler_id, $driver_fname, $driver_mname, $driver_lname, $driver_phone)
     {
         try {
+            $sql = "SELECT * FROM driver WHERE driver_fname = :driver_fname AND driver_mname = :driver_mname AND driver_lname = :driver_lname";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'driver_fname' => $driver_fname,
+                'driver_mname' => $driver_mname,
+                'driver_lname' => $driver_lname
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Driver already exist!');
+                return;
+            }
+
+            $sql = "SELECT * FROM driver WHERE driver_phone = :driver_phone";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'driver_phone' => $driver_phone
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Phone number already exist!');
+                return;
+            }
             $sql = "INSERT INTO driver (hauler_id, driver_fname, driver_mname, driver_lname, driver_phone) VALUES (:hauler_id, :driver_fname, :driver_mname, :driver_lname, :driver_phone)";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -203,6 +250,28 @@ class settingsManager
     public function updateDriver($driver_id, $hauler_id, $driver_fname, $driver_mname, $driver_lname, $driver_phone)
     {
         try {
+            $sql = "SELECT * FROM driver WHERE driver_fname = :driver_fname AND driver_mname = :driver_mname AND driver_lname = :driver_lname AND driver_id != :driver_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'driver_fname' => $driver_fname,
+                'driver_mname' => $driver_mname,
+                'driver_lname' => $driver_lname,
+                'driver_id' => $driver_id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Driver already exist! Please try again.');
+                return;
+            }
+            $sql = "SELECT * FROM driver WHERE driver_phone = :driver_phone AND driver_id != :driver_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'driver_phone' => $driver_phone,
+                'driver_id' => $driver_id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Phone number already exist! Please try again.');
+                return;
+            }
             $sql = "UPDATE driver SET hauler_id = :hauler_id, driver_fname = :driver_fname, driver_mname = :driver_mname, driver_lname = :driver_lname, driver_phone = :driver_phone WHERE driver_id = :driver_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -223,6 +292,26 @@ class settingsManager
     public function addHelper($hauler_id, $helper_fname, $helper_mname, $helper_lname, $helper_phone)
     {
         try {
+            $sql = "SELECT * FROM helper WHERE helper_fname = :helper_fname AND helper_mname = :helper_mname AND helper_lname = :helper_lname";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'helper_fname' => $helper_fname,
+                'helper_mname' => $helper_mname,
+                'helper_lname' => $helper_lname
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Helper already exist!');
+                return;
+            }
+            $sql = "SELECT * FROM helper WHERE helper_phone = :helper_phone";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'helper_phone' => $helper_phone
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Helper Phone number already exist!');
+                return;
+            }
             $sql = "INSERT INTO helper (hauler_id, helper_fname, helper_mname, helper_lname, helper_phone) VALUES (:hauler_id, :helper_fname, :helper_mname, :helper_lname, :helper_phone)";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -241,6 +330,28 @@ class settingsManager
     public function updateHelper($helper_id, $hauler_id, $helper_fname, $helper_mname, $helper_lname, $helper_phone)
     {
         try {
+            $sql = "SELECT * FROM helper WHERE helper_fname = :helper_fname AND helper_mname = :helper_mname AND helper_lname = :helper_lname AND helper_id != :helper_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'helper_fname' => $helper_fname,
+                'helper_mname' => $helper_mname,
+                'helper_lname' => $helper_lname,
+                'helper_id' => $helper_id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Helper already exist! Please try again.');
+                return;
+            }
+            $sql = "SELECT * FROM helper WHERE helper_phone = :helper_phone AND helper_id != :helper_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'helper_phone' => $helper_phone,
+                'helper_id' => $helper_id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Helper Phone number already exist! Please try again.');
+                return;
+            }
             $sql =  "UPDATE helper SET hauler_id = :hauler_id, helper_fname = :helper_fname, helper_mname = :helper_mname, helper_lname = :helper_lname, helper_phone = :helper_phone WHERE helper_id = :helper_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -252,6 +363,140 @@ class settingsManager
                 'helper_id' => $helper_id
             ]);
             $this->sendResponse(true, 'Helper updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function getProjects()
+    {
+        try {
+            $sql = "SELECT * FROM project";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $this->sendResponse(true, 'Success', $projects);
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function addProject($project_name, $project_description)
+    {
+        try {
+            $sql = "SELECT * FROM project WHERE project_name = :project_name";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'project_name' => $project_name
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Project already exist!');
+                return;
+            }
+            $sql = "INSERT INTO project (project_name, project_description) VALUES (:project_name, :project_description)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'project_name' => $project_name,
+                'project_description' => $project_description
+            ]);
+            $this->sendResponse(true, 'Project added successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function updateProject($project_id, $project_name, $project_description)
+    {
+        try {
+            $sql = "SELECT * FROM project WHERE project_name = :project_name AND project_id != :project_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'project_name' => $project_name,
+                'project_id' => $project_id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Project already exist! Please try again.');
+                return;
+            }
+            $sql = "UPDATE project SET project_name = :project_name, project_description = :project_description WHERE project_id = :project_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'project_name' => $project_name,
+                'project_description' => $project_description,
+                'project_id' => $project_id
+            ]);
+            $this->sendResponse(true, 'Project updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function getOrigins()
+    {
+        try {
+            $sql = "SELECT * FROM origin";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $origins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $this->sendResponse(true, 'Success', $origins);
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function addOrigin($origin_name, $origin_code)
+    {
+        try {
+            $sql = "INSERT INTO origin (origin_name, origin_code) VALUES (:origin_name, :origin_code)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'origin_name' => $origin_name,
+                'origin_code' => $origin_code
+            ]);
+            $this->sendResponse(true, 'Origin added successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function updateOrigin($origin_id, $origin_name, $origin_code)
+    {
+        try {
+            $sql = "UPDATE origin SET origin_name = :origin_name, origin_code = :origin_code WHERE origin_id = :origin_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'origin_name' => $origin_name,
+                'origin_code' => $origin_code,
+                'origin_id' => $origin_id
+            ]);
+            $this->sendResponse(true, 'Origin updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function getDemurrage()
+    {
+        try {
+            $sql = "SELECT * FROM demurrage ORDER BY updated_at DESC";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $demurrage = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $this->sendResponse(true, 'Success', $demurrage);
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function updateDemurrage($demurrage)
+    {
+        try {
+            $sql = "INSERT INTO demurrage (demurrage) VALUES (:demurrage)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'demurrage' => $demurrage
+            ]);
+            $this->sendResponse(true, 'Demurrage updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
             $this->sendResponse(false, 'Internal server error');
@@ -347,6 +592,41 @@ try {
                 $helper_lname = $_POST['helper_lname'] ?? null;
                 $helper_phone = $_POST['helper_phone'] ?? null;
                 $settingsManager->updateHelper($helper_id, $hauler_id, $helper_fname, $helper_mname, $helper_lname, $helper_phone);
+                break;
+            case 'list projects':
+                $settingsManager->getProjects();
+                break;
+            case 'create project':
+                $project_name = $_POST['project_name'] ?? null;
+                $project_description = $_POST['project_description'] ?? null;
+                $settingsManager->addProject($project_name, $project_description);
+                break;
+            case 'update project':
+                $project_id = $_POST['project_id'] ?? null;
+                $project_name = $_POST['project_name'] ?? null;
+                $project_description = $_POST['project_description'] ?? null;
+                $settingsManager->updateProject($project_id, $project_name, $project_description);
+                break;
+            case 'list origins':
+                $settingsManager->getOrigins();
+                break;
+            case 'create origin':
+                $origin_name = $_POST['origin_name'] ?? null;
+                $origin_code = $_POST['origin_code'] ?? null;
+                $settingsManager->addOrigin($origin_name, $origin_code);
+                break;
+            case 'update origin':
+                $origin_id = $_POST['origin_id'] ?? null;
+                $origin_name = $_POST['origin_name'] ?? null;
+                $origin_code = $_POST['origin_code'] ?? null;
+                $settingsManager->updateOrigin($origin_id, $origin_name, $origin_code);
+                break;
+            case 'list demurrage':
+                $settingsManager->getDemurrage();
+                break;
+            case 'update demurrage':
+                $demurrage = $_POST['demurrage'] ?? null;
+                $settingsManager->updateDemurrage($demurrage);
                 break;
             default:
                 $settingsManager->sendResponse(false, 'Invalid action');

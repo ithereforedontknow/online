@@ -107,6 +107,7 @@ include_once('../../includes/header/header-admin.php');
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-plate-no" name="edit-plate-no" required>
                         <label for="edit-plate-no">Plate Number</label>
+                        <div class="invalid-feedback">Plate Number already exists!</div>
                     </div>
                     <div class="form-floating">
                         <select name="edit-truck-type" id="edit-truck-type" class="form-select" onchange="showOthersType()" required>
