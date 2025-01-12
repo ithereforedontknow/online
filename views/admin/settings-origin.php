@@ -38,7 +38,6 @@ include_once('../../includes/header/header-admin.php');
                         <input type="text" class="form-control" id="add-origin-name" name="add-origin-name" required oninput="this.value = this.value.toUpperCase()">
                         <label for="add-origin-name">Origin</label>
                         <div class="invalid-feedback">Origin already exist.</div>
-
                     </div>
                     <div class="form-floating">
                         <input type="text" class="form-control" id="add-origin-code" name="add-origin-code" required oninput="this.value = this.value.toUpperCase()">
@@ -65,7 +64,7 @@ include_once('../../includes/header/header-admin.php');
                     <input type="hidden" id="edit-origin-id">
                     <div class="form-floating mb-4">
                         <input type="text" class="form-control" id="edit-origin-name" name="edit-origin-name" required oninput="this.value = this.value.toUpperCase()">
-                        <label for="edit-origin">Origin</label>
+                        <label for="edit-origin-name">Origin</label>
                         <div class="invalid-feedback">Origin already exist.</div>
 
                     </div>
@@ -85,3 +84,8 @@ include_once('../../includes/header/header-admin.php');
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
+<script src="../../assets/js/settings.js"></script>
+</body>
+
+</html>

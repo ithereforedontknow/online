@@ -25,6 +25,20 @@ class TransactionManager
         echo json_encode($response);
         exit;
     }
+    public function getTransactionStatus()
+    {
+        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id";
+
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $this->sendResponse(true, 'Success', $transactions);
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
     public function addBranchTransaction($data)
     {
         try {
@@ -44,28 +58,29 @@ class TransactionManager
             if (strtotime($data['time-departure']) < strtotime(date('Y-m-d H:i:s'))) {
                 throw new Exception('Time of Departure cannot be in the past');
             }
-
-            // Validate driver availability
+            // Update driver availability
             $stmt = $this->conn->prepare("
-                SELECT 1 FROM transaction 
+                UPDATE driver
+                SET status = '0'
                 WHERE driver_id = :driver_id 
-                AND status = 'departed'
             ");
             $stmt->execute(['driver_id' => $data['driver-id']]);
-            if ($stmt->rowCount() > 0) {
-                throw new Exception('Driver is currently assigned to another transaction');
-            }
 
-            // Validate helper availability
+            // Update helper availability
             $stmt = $this->conn->prepare("
-                SELECT 1 FROM transaction 
+                UPDATE helper 
+                SET status = '0'
                 WHERE helper_id = :helper_id 
-                AND status = 'departed'
             ");
             $stmt->execute(['helper_id' => $data['helper-id']]);
-            if ($stmt->rowCount() > 0) {
-                throw new Exception('Helper is currently assigned to another transaction');
-            }
+
+            // Update vehicle availability
+            $stmt = $this->conn->prepare("
+                UPDATE vehicle
+                SET status = '0'
+                WHERE vehicle_id = :vehicle_id 
+            ");
+            $stmt->execute(['vehicle_id' => $data['vehicle-id']]);
 
             // Insert transaction
             $stmt = $this->conn->prepare("
@@ -133,6 +148,29 @@ class TransactionManager
             if ($stmt->rowCount() > 0) {
                 $this->sendResponse(false, 'TO Reference already exists');
             } else {
+                // Update driver availability
+                $stmt = $this->conn->prepare("
+            UPDATE driver
+            SET status = '0'
+            WHERE driver_id = :driver_id 
+        ");
+                $stmt->execute(['driver_id' => $data['driver_id']]);
+
+                // Update helper availability
+                $stmt = $this->conn->prepare("
+            UPDATE helper 
+            SET status = '0'
+            WHERE helper_id = :helper_id 
+        ");
+                $stmt->execute(['helper_id' => $data['helper_id']]);
+
+                // Update vehicle availability
+                $stmt = $this->conn->prepare("
+            UPDATE vehicle
+            SET status = '0'
+            WHERE vehicle_id = :vehicle_id 
+        ");
+                $stmt->execute(['vehicle_id' => $data['vehicle_id']]);
                 $status = "arrived";
                 // Insert the transaction
                 $stmt = $this->conn->prepare("INSERT INTO transaction (to_reference, guia, hauler_id, vehicle_id, driver_id, helper_id, project_id, no_of_bales, kilos, origin_id, time_of_departure, status) VALUES (:to_reference, :guia, :hauler_id, :vehicle_id, :driver_id, :helper_id, :project_id, :no_of_bales, :kilos, :origin_id, :time_departure, :status)");
@@ -239,6 +277,9 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
         switch ($action) {
+            case 'transaction status':
+                $transactionManager->getTransactionStatus();
+                break;
             case 'branch add transaction':
                 $transactionManager->addBranchTransaction($_POST);
                 break;
@@ -275,7 +316,6 @@ try {
                     $transactionManager->sendResponse(false, 'Missing transaction ID or arrival time');
                 }
                 break;
-
             default:
                 $transactionManager->sendResponse(false, 'Invalid action');
         }

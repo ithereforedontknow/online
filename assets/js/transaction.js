@@ -70,7 +70,26 @@ $("#add-transaction").submit(async function (e) {
     return option.length ? option.attr("data-id") : null; // Return the data-id if found
   }
 
-  // Function to validate datetime
+  // Extracting IDs from the datalist inputs
+  const hauler_id = getDatalistValue("#hauler", "haulers");
+  const vehicle_id = getDatalistValue("#plate-number", "plate-numbers");
+  const driver_id = getDatalistValue("#driver-name", "driver-names");
+  const helper_id = getDatalistValue("#helper-name", "helper-names");
+
+  // DateTime validation
+  const arrivalDateTime = $("#arrival-time").val();
+  const departureDateTime = $("#time-departure").val();
+  function validateDateNotInPast(dateTime) {
+    if (!dateTime) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of the day
+    const inputDate = new Date(dateTime);
+
+    // Ensure the input date is not before today
+    return inputDate >= today;
+  }
+
   function validateDateTime(arrivalDateTime, departureDateTime) {
     if (!arrivalDateTime || !departureDateTime) return false;
 
@@ -81,16 +100,34 @@ $("#add-transaction").submit(async function (e) {
     return arrival > departure;
   }
 
-  // Extracting IDs from the datalist inputs
-  const hauler_id = getDatalistValue("#hauler", "haulers");
-  const vehicle_id = getDatalistValue("#plate-number", "plate-numbers");
-  const driver_id = getDatalistValue("#driver-name", "driver-names");
-  const helper_id = getDatalistValue("#helper-name", "helper-names");
+  function validateDepartureTime(departureDateTime) {
+    if (!departureDateTime) return false;
 
-  // DateTime validation
-  const arrivalDateTime = $("#arrival-time").val();
-  const departureDateTime = $("#time-departure").val();
+    const today = new Date();
+    const departure = new Date(departureDateTime);
 
+    // Ensure departure time is in the future
+    return departure > today;
+  }
+
+  // Check if departure date is not in the past
+  if (!validateDateNotInPast(departureDateTime)) {
+    $("#time-departure").addClass("is-invalid");
+    if (!$("#time-departure").siblings(".invalid-feedback").length) {
+      $("#time-departure").after(
+        '<div class="invalid-feedback">Departure date must not be in the past</div>'
+      );
+    } else {
+      $("#time-departure")
+        .siblings(".invalid-feedback")
+        .text("Departure date must not be in the past");
+    }
+    return;
+  } else {
+    $("#time-departure").removeClass("is-invalid");
+  }
+
+  // Check arrival time vs departure time
   if (arrivalDateTime && departureDateTime) {
     if (!validateDateTime(arrivalDateTime, departureDateTime)) {
       $("#arrival-time").addClass("is-invalid");
@@ -107,6 +144,23 @@ $("#add-transaction").submit(async function (e) {
     } else {
       $("#arrival-time").removeClass("is-invalid");
     }
+  }
+
+  // Check if arrival date is not in the past
+  if (!validateDateNotInPast(arrivalDateTime)) {
+    $("#arrival-time").addClass("is-invalid");
+    if (!$("#arrival-time").siblings(".invalid-feedback").length) {
+      $("#arrival-time").after(
+        '<div class="invalid-feedback">Arrival date must not be in the past</div>'
+      );
+    } else {
+      $("#arrival-time")
+        .siblings(".invalid-feedback")
+        .text("Arrival date must not be in the past");
+    }
+    return;
+  } else {
+    $("#arrival-time").removeClass("is-invalid");
   }
 
   // Validation for Datalist Values
@@ -165,8 +219,8 @@ $("#add-transaction").submit(async function (e) {
 
   try {
     await transactionManager.createTransaction(data);
-    refreshTransactionList();
-    $("#add-transaction").trigger("reset");
+    refreshArrivedList();
+    $("#addTransactionOffcanvas").offcanvas("hide");
   } catch (error) {
     console.error("Transaction creation failed:", error);
     // Optionally, show an error message to the user
@@ -176,7 +230,8 @@ function cancelTransaction(id) {
   transactionManager
     .cancelTransaction(id)
     .then(() => {
-      refreshTransactionList("departed");
+      refreshDepartedList();
+      refreshCancelledList();
     })
     .catch((error) => {
       console.error("Transaction cancellation failed:", error);
@@ -187,7 +242,8 @@ function restoreTransaction(id) {
   transactionManager
     .restoreTransaction(id)
     .then(() => {
-      refreshTransactionList("cancelled");
+      refreshCancelledList();
+      refreshDepartedList();
     })
     .catch((error) => {
       console.error("Transaction restoration failed:", error);
@@ -199,8 +255,8 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
   event.preventDefault();
 
   // Gather data from the form
-  const transactionId = $(this).find("#arrival-transaction-id").val();
-  const arrivalTime = $(this).find("#arrival-arrival-time").val();
+  const transactionId = $(this).find("#arrived-transaction-id").val();
+  const arrivalTime = $(this).find("#arrived-arrival-time").val();
 
   // Validate data
   if (!transactionId || !arrivalTime) {
@@ -239,7 +295,7 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
       });
 
       // Refresh transaction list
-      refreshTransactionList("departed");
+      refreshDepartedList();
     } else {
       throw new Error(response.message || "Unknown error occurred.");
     }
@@ -254,124 +310,338 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
   }
 });
 
-function refreshTransactionList(status) {
-  const endpoints = {
-    departed: {
-      url: "../../api/transaction.php",
-      data: { action: "list", status: "departed" },
-    },
-    cancelled: {
-      url: "../../api/transaction.php",
-      data: { action: "list", status: "cancelled" },
-    },
-    arrived: {
-      url: "../../api/queue.php",
-      data: { action: "list arrived", status: "arrived" },
-    },
-  };
-
-  const config = endpoints[status];
-  if (!config) return;
-
+async function refreshDepartedList() {
   try {
-    $.ajax({
-      url: config.url,
+    const response = await $.ajax({
+      url: "../../api/transaction.php",
       method: "POST",
-      data: config.data,
+      data: { action: "list", status: "departed" },
       dataType: "json",
-    }).then((response) => {
-      if (response.success) {
-        const list = $("#departed-list");
-
-        // Destroy existing DataTable
-        if ($.fn.DataTable.isDataTable("#departed-table")) {
-          $("#departed-table").DataTable().destroy();
-        }
-
-        // Generate appropriate row HTML based on status
-        const rows = response.data.transactions
-          .map((transaction) => {
-            let actionColumn = "";
-            switch (status) {
-              case "departed":
-                actionColumn = `
-                              <td class="text-center">
-                                  <form class="arrival-transaction-form d-flex justify-content-center align-items-center">
-                                      <input type="hidden" id="arrival-transaction-id" name="arrival-transaction-id" value="${
-                                        transaction.transaction_id
-                                      }" />
-                                      <input type="datetime-local" class="form-control" id="arrival-arrival-time" name="arrival-arrival-time" required style="width: auto;">
-                                      <button type="submit" class="btn btn-primary ms-2">Save</button>
-                                  </form>
-                              </td>
-                              <td class="text-center">
-                                  <button type="button" class="btn btn-primary ms-2" onclick='editTransaction(${JSON.stringify(
-                                    transaction
-                                  )})'>Edit</button>
-                                  <button type="button" class="btn btn-secondary ms-2" onclick='cancelTransaction(${
-                                    transaction.transaction_id
-                                  })'>Cancel</button>
-                              </td>`;
-                break;
-              case "cancelled":
-                actionColumn = `
-                              <td class="text-center">${"-"}</td>
-                              <td class="text-center">
-                                  <button type="button" class="btn btn-primary ms-2" onclick="restoreTransaction(${
-                                    transaction.transaction_id
-                                  })">Restore</button>
-                              </td>`;
-                break;
-              case "arrived":
-                actionColumn = `
-                              <td class="text-center">${transaction.arrival_time}</td>
-                              <td class="text-center">
-                                  <button type="button" class="btn btn-primary ms-2" onclick="queueTransaction(${transaction.transaction_id})">Queue</button>
-                              </td>`;
-                break;
-            }
-
-            return `<tr>
-                      <td class="text-center">${transaction.to_reference}</td>
-                      <td class="text-center">${transaction.guia}</td>
-                      <td class="text-center">${transaction.hauler_name}</td>
-                      <td class="text-center">${transaction.plate_number}</td>
-                      <td class="text-center">${transaction.project_name}</td>
-                      <td class="text-center">${transaction.origin_name}</td>
-                      ${actionColumn}
-                  </tr>`;
-          })
-          .join("");
-
-        list.html(rows);
-
-        // Reinitialize DataTable
-        $("#departed-table").DataTable({
-          responsive: true,
-          lengthChange: false,
-        });
-      } else {
-        showError(
-          response.message || `Unable to fetch ${status} transactions.`
-        );
-      }
     });
+
+    if (response.success) {
+      const list = $("#departed-list");
+
+      if ($.fn.DataTable.isDataTable("#departed-table")) {
+        $("#departed-table").DataTable().destroy();
+      }
+
+      const rows = response.data.transactions
+        .map(
+          (transaction) => `
+          <tr>
+            <td class="text-center">${transaction.to_reference}</td>
+            <td class="text-center">${transaction.guia}</td>
+            <td class="text-center">${transaction.hauler_name}</td>
+            <td class="text-center">${transaction.plate_number}</td>
+            <td class="text-center">${transaction.project_name}</td>
+            <td class="text-center">${transaction.origin_name}</td>
+            <td class="text-center">
+              <form class="arrival-transaction-form d-flex justify-content-center align-items-center">
+                <input type="hidden" name='arrived-transaction-id' id="arrived-transaction-id" value="${
+                  transaction.transaction_id
+                }" />
+                <input type="datetime-local" class="form-control" name='arrived-arrival-time' id="arrived-arrival-time" required style="width: auto;">
+                <button type="submit" class="btn btn-primary ms-2">Save</button>
+              </form>
+            </td>
+            <td class="text-center">
+              <button type="button" class="btn btn-primary ms-2" onclick='editTransaction(${JSON.stringify(
+                transaction
+              )})'>Edit</button>
+              <button type="button" class="btn btn-secondary ms-2" onclick='cancelTransaction(${
+                transaction.transaction_id
+              })'>Cancel</button>
+            </td>
+          </tr>
+        `
+        )
+        .join("");
+
+      list.html(rows);
+      $("#departed-table").DataTable({ responsive: true, lengthChange: false });
+    } else {
+      showError(response.message || "Unable to fetch departed transactions.");
+    }
   } catch (error) {
-    console.error(`Error fetching ${status} transaction list:`, error);
-    showError(`Failed to retrieve ${status} transaction list.`);
+    console.error("Error fetching departed transactions:", error);
   }
 }
 
-// Modify the status filter event handler
-$("#status-filter").on("change", function () {
-  const status = $(this).val();
-  if (status) {
-    refreshTransactionList(status);
+async function refreshCancelledList() {
+  try {
+    const response = await $.ajax({
+      url: "../../api/transaction.php",
+      method: "POST",
+      data: { action: "list", status: "cancelled" },
+      dataType: "json",
+    });
+
+    if (response.success) {
+      const list = $("#cancelled-list");
+
+      if ($.fn.DataTable.isDataTable("#cancelled-table")) {
+        $("#cancelled-table").DataTable().destroy();
+      }
+
+      const rows = response.data.transactions
+        .map(
+          (transaction) => `
+          <tr>
+            <td class="text-center">${transaction.to_reference}</td>
+            <td class="text-center">${transaction.guia}</td>
+            <td class="text-center">${transaction.hauler_name}</td>
+            <td class="text-center">${transaction.plate_number}</td>
+            <td class="text-center">${transaction.project_name}</td>
+            <td class="text-center">${transaction.origin_name}</td>
+            <td class="text-center">-</td>
+            <td class="text-center">
+              <button type="button" class="btn btn-primary ms-2" onclick="restoreTransaction(${transaction.transaction_id})">Restore</button>
+            </td>
+          </tr>
+        `
+        )
+        .join("");
+
+      list.html(rows);
+      $("#cancelled-table").DataTable({
+        responsive: true,
+        lengthChange: false,
+      });
+    } else {
+      showError(response.message || "Unable to fetch cancelled transactions.");
+    }
+  } catch (error) {
+    console.error("Error fetching cancelled transactions:", error);
   }
+}
+async function refreshArrivedList() {
+  try {
+    const response = await $.ajax({
+      url: "../../api/queue.php",
+      method: "POST",
+      data: { action: "list arrived", status: "arrived" },
+      dataType: "json",
+    });
+
+    if (response.success) {
+      const list = $("#arrived-list");
+
+      if ($.fn.DataTable.isDataTable("#arrived-table")) {
+        $("#arrived-table").DataTable().destroy();
+      }
+
+      const rows = response.data.transactions
+        .map(
+          (transaction) => `
+          <tr>
+            <td class="text-center">${transaction.to_reference}</td>
+            <td class="text-center">${transaction.guia}</td>
+            <td class="text-center">${transaction.hauler_name}</td>
+            <td class="text-center">${transaction.plate_number}</td>
+            <td class="text-center">${transaction.project_name}</td>
+            <td class="text-center">${transaction.origin_name}</td>
+            <td class="text-center">${transaction.arrival_time}</td>
+            <td class="text-center">
+              <button type="button" class="btn btn-primary ms-2" onclick="queueTransaction(${transaction.transaction_id})">Queue</button>
+            </td>
+          </tr>
+        `
+        )
+        .join("");
+
+      list.html(rows);
+      $("#arrived-table").DataTable({
+        responsive: true,
+        lengthChange: false,
+      });
+    } else {
+      showError(response.message || "Unable to fetch arrived transactions.");
+    }
+  } catch (error) {
+    console.error("Error fetching arrived transactions:", error);
+  }
+}
+async function refreshTransactionStatus() {
+  try {
+    const selectedStatus = $("#statusFilter").val(); // Get the selected status
+
+    const response = await $.ajax({
+      url: "../../api/transaction.php",
+      method: "POST",
+      data: { action: "transaction status" },
+      dataType: "json",
+    });
+
+    console.log("Response:", response); // Log the response
+
+    if (response.success) {
+      const statusProgressMap = {
+        departed: 17.5,
+        arrived: 34,
+        queue: 50.5,
+        standby: 67,
+        ongoing: 83.5,
+        done: 100,
+      };
+
+      // Filter transactions if a specific status is selected
+      const filteredTransactions = selectedStatus
+        ? response.data.filter(
+            (transaction) =>
+              transaction.status.toLowerCase() === selectedStatus.toLowerCase()
+          )
+        : response.data;
+
+      const cards = filteredTransactions.map((transaction) => {
+        const progressValue =
+          statusProgressMap[transaction.status.toLowerCase()] || 0;
+
+        return `
+          <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+              <div class="card-body">
+                <h5 class="card-title fw-bold">Plate Number: ${
+                  transaction.plate_number
+                }</h5>
+                <h5 class="card-title fw-bold">Driver: ${
+                  transaction.driver_fname
+                } ${transaction.driver_lname}</h5>
+                <h5 class="card-title fw-bold">Helper: ${
+                  transaction.helper_fname
+                } ${transaction.helper_lname}</h5>
+                <p class="card-text">Status: ${transaction.status}</p>
+                <div class="progress ">
+                  <div
+                    class="progress-bar progress-bar-striped progress-bar-animated ${
+                      progressValue === 100 ? "bg-success" : "bg-primary"
+                    }"
+                    role="progressbar"
+                    style="width: ${progressValue}%"
+                    aria-valuenow="${progressValue}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    ${progressValue}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      });
+
+      // Update the HTML content of the transaction column
+      $("#transaction-column").html(cards.join(""));
+    } else {
+      showError(response.message || "Unable to fetch transaction status.");
+    }
+  } catch (error) {
+    console.error("Error fetching transaction status:", error);
+  }
+}
+
+// Attach change event listener to the filter dropdown
+$("#statusFilter").on("change", function () {
+  refreshTransactionStatus();
 });
 
+// Initial call to load all transactions
+refreshTransactionStatus();
+
+function queueTransaction(transactionId) {
+  // open addQueueOffcanvas
+  $("#add-queue-transaction-id").val(transactionId);
+  $("#addQueueOffcanvas").offcanvas("show");
+}
+$("#add-queue-transaction").submit(async function (e) {
+  e.preventDefault();
+  const data = {
+    action: "add to queue",
+    transaction_id: $("#add-queue-transaction-id").val(),
+    transfer_in_line: $("#add-queue-transfer-in-line").val(),
+    ordinal: $("#add-queue-ordinal").val(),
+    shift: $("#add-queue-shift").val(),
+    schedule: $("#add-queue-schedule").val(),
+    queue_number: $("#add-queue-number").val(),
+    priority: $("#add-queue-priority").val(),
+  };
+
+  try {
+    const response = await $.ajax({
+      url: "../../api/queue.php",
+      method: "POST",
+      data: data,
+      dataType: "json",
+    });
+    if (response.success) {
+      refreshArrivedList();
+      $("#addQueueOffcanvas").offcanvas("hide");
+    } else {
+      $("#add-queue-number").addClass("is-invalid");
+      console.error("Error queueing transaction:", response.message);
+    }
+  } catch (error) {
+    console.error("Transaction queueing failed:", error);
+    // Optionally, show an error message to the user
+  }
+});
 // Update document.ready
 $(document).ready(function () {
-  $("#status-filter").val("departed");
-  refreshTransactionList("departed");
+  // Initially hide arrived and cancelled tables completely
+  $("#arrived-table_wrapper, #cancelled-table_wrapper").hide();
+  $("#arrived-table, #cancelled-table").addClass("d-none");
+
+  // Show only departed table and initialize its DataTable
+  $("#departed-table").removeClass("d-none");
+
+  // Initialize DataTables but only make departed active initially
+  $("#departed-table").DataTable({
+    responsive: true,
+    lengthChange: false,
+  });
+
+  refreshTransactionStatus();
+  // Only load departed list initially
+  refreshDepartedList();
+
+  // Initialize other DataTables without loading data
+  $("#arrived-table, #cancelled-table").DataTable({
+    responsive: true,
+    lengthChange: false,
+  });
+
+  // Update showTable function to handle data loading
+  window.showTable = function (status) {
+    // Hide all table wrappers
+    $(
+      "#departed-table_wrapper, #arrived-table_wrapper, #cancelled-table_wrapper"
+    ).hide();
+
+    // Hide all tables
+    $(".table").addClass("d-none");
+
+    // Show the selected table and its wrapper
+    $(`#${status}-table`).removeClass("d-none");
+    $(`#${status}-table_wrapper`).show();
+
+    // Load data based on selected status
+    switch (status) {
+      case "departed":
+        refreshDepartedList();
+        break;
+      case "arrived":
+        refreshArrivedList();
+        break;
+      case "cancelled":
+        refreshCancelledList();
+        break;
+    }
+
+    // Adjust DataTable columns for proper rendering
+    $(`#${status}-table`).DataTable().columns.adjust();
+
+    // Update active state in pagination
+    $(".page-item").removeClass("active");
+    $(`.page-item[data-table="${status}"]`).addClass("active");
+  };
 });

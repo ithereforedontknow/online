@@ -106,3 +106,7 @@ $unloading = $stmtUnloading->fetch(PDO::FETCH_ASSOC);
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
+</body>
+
+</html>

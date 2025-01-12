@@ -13,7 +13,7 @@ include_once('../../includes/header/header-admin.php');
                         <th class="text-center" scope="col">Unloading Time Start</th>
                         <th class="text-center" scope="col">Unloading Time End</th>
                         <th class="text-center" scope="col">Time of Departure</th>
-                        <th class="text-center" scope="col">Time in waiting area</th>
+                        <th class="text-center" scope="col">Demurrage</th>
                     </tr>
                 </thead>
                 <tbody id="transaction-data">
@@ -77,7 +77,18 @@ include_once('../../includes/header/header-admin.php');
                                     }
                                     ?>
                                 </td>
-                                <td class='text-center'><?= $row['time_spent_waiting_area'] . " hours" ?></td>
+                                <td class="text-center">
+                                    <?php
+                                    if ($row['demurrage'] == null) {
+                                    ?>
+                                        <input type="text" form="insert-transfer-out-scrap-remarks-<?= htmlspecialchars($row['transaction_id']) ?>"
+                                            class="form-control" name="demurrage" required>
+                                    <?php
+                                    } else {
+                                        echo $row['demurrage'];
+                                    }
+                                    ?>
+                                </td>
                             </tr>
                     <?php
                         }
@@ -93,3 +104,6 @@ include_once('../../includes/header/header-admin.php');
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+</body>
+
+</html>

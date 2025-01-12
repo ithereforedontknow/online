@@ -3,8 +3,8 @@ include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
     <div class="container">
-        <h1 class="display-5 fw-bold mb-0">User Management</h1>
-        <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex align-items-center">
+            <h1 class="display-5 me-auto fw-bold mb-0">User Management</h1>
             <button class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#addUserOffcanvas">
                 <i class="fa-solid fa-plus fa-lg me-2" style="color: #ffffff;"></i> New User
             </button>
@@ -32,3 +32,8 @@ include_once('../../includes/header/header-admin.php');
 include_once('../../includes/offcanvas/user-offcanvas.php');
 include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
+<script src="../../assets/js/user.js"></script>
+</body>
+
+</html>

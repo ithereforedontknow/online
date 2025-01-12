@@ -35,7 +35,7 @@
                         <label for="plate-number">Plate Number</label>
                         <datalist id="plate-numbers">
                             <?php
-                            $stmt = $conn->prepare("SELECT * FROM vehicle");
+                            $stmt = $conn->prepare("SELECT * FROM vehicle WHERE status = '1'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo '<option value="' . $row['plate_number'] . ' : ' . $row['truck_type'] . '" data-id="' . $row['vehicle_id'] . '"></option>';
@@ -50,7 +50,7 @@
                         <label for="driver-name">Driver Name</label>
                         <datalist id="driver-names">
                             <?php
-                            $stmt = $conn->prepare("SELECT * FROM driver");
+                            $stmt = $conn->prepare("SELECT * FROM driver WHERE status = '1'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo '<option value="' . $row['driver_fname'] . ' ' . $row['driver_lname'] . '" data-id="' . $row['driver_id'] . '"></option>';
@@ -65,7 +65,7 @@
                         <label for="helper-name">Helper Name</label>
                         <datalist id="helper-names">
                             <?php
-                            $stmt = $conn->prepare("SELECT * FROM helper");
+                            $stmt = $conn->prepare("SELECT * FROM helper WHERE status = '1'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo '<option value="' . $row['helper_fname'] . ' ' . $row['helper_lname'] . '" data-id="' . $row['helper_id'] . '"></option>';
@@ -111,7 +111,7 @@
                     <div class="form-floating mb-4">
                         <input type="datetime-local" class="form-control" id="time-departure" name="time-departure" required autocomplete="off">
                         <label for="time-departure">Time of Departure</label>
-                        <div class="invalid-feedback">Departure time must be earlier than arrival time</div>
+                        <div class="invalid-feedback">Departure time must be today or later</div>
                     </div>
                     <div class="form-floating mb-4">
                         <input type="datetime-local" class="form-control" id="arrival-time" name="arrival-time" required autocomplete="off">
@@ -165,7 +165,7 @@
                         <label for="edit-plate-number">Plate Number</label>
                         <datalist id="edit-plate-numbers">
                             <?php
-                            $stmt = $conn->prepare("SELECT * FROM vehicle");
+                            $stmt = $conn->prepare("SELECT * FROM vehicle WHERE status = '1'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo '<option value="' . $row['plate_number'] . ' : ' . $row['truck_type'] . '" data-id="' . $row['vehicle_id'] . '"></option>';
@@ -180,7 +180,7 @@
                         <label for="edit-driver-name">Driver Name</label>
                         <datalist id="edit-driver-names">
                             <?php
-                            $stmt = $conn->prepare("SELECT * FROM driver");
+                            $stmt = $conn->prepare("SELECT * FROM driver WHERE status = '1'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo '<option value="' . $row['driver_fname'] . ' ' . $row['driver_lname'] . '" data-id="' . $row['driver_id'] . '"></option>';
@@ -195,7 +195,7 @@
                         <label for="edit-helper-name">Helper Name</label>
                         <datalist id="edit-helper-names">
                             <?php
-                            $stmt = $conn->prepare("SELECT * FROM helper");
+                            $stmt = $conn->prepare("SELECT * FROM helper WHERE status = '1'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo '<option value="' . $row['helper_fname'] . ' ' . $row['helper_lname'] . '" data-id="' . $row['helper_id'] . '"></option>';

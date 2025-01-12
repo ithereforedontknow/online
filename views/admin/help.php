@@ -217,3 +217,6 @@ include_once('../../includes/header/header-admin.php');
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+</body>
+
+</html>

@@ -447,6 +447,15 @@ class settingsManager
     public function addOrigin($origin_name, $origin_code)
     {
         try {
+            $sql = "SELECT * FROM origin WHERE origin_name = :origin_name";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'origin_name' => $origin_name
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Origin already exist!');
+                return;
+            }
             $sql = "INSERT INTO origin (origin_name, origin_code) VALUES (:origin_name, :origin_code)";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
@@ -462,6 +471,16 @@ class settingsManager
     public function updateOrigin($origin_id, $origin_name, $origin_code)
     {
         try {
+            $sql = "SELECT * FROM origin WHERE origin_name = :origin_name AND origin_id != :origin_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'origin_name' => $origin_name,
+                'origin_id' => $origin_id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'Origin already exist! Please try again.');
+                return;
+            }
             $sql = "UPDATE origin SET origin_name = :origin_name, origin_code = :origin_code WHERE origin_id = :origin_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([

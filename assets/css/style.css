@@ -32,6 +32,31 @@ body {
   background-color: #1f3a69;
   border: #1f3a69;
 }
+.pagination-nav {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+}
+
+/* Hover state for inactive items */
+.pagination-nav:hover {
+  background-color: #5c636a !important;
+  border-color: #5c636a !important;
+  color: white !important;
+}
+
+/* Style for active pagination item */
+.page-item.active .pagination-nav {
+  background-color: #1f3a69 !important;
+  border-color: #1f3a69 !important;
+  color: white !important;
+}
+
+/* Optional: Hover state for active item */
+.page-item.active .pagination-nav:hover {
+  background-color: #1f3a69 !important;
+  border-color: #1f3a69 !important;
+}
 
 .navbar {
   background-color: #15294e;

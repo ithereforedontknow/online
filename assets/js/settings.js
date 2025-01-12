@@ -108,6 +108,16 @@ const settingsManager = {
             .addClass("is-invalid")
             .siblings(".invalid-feedback");
           break;
+        case "Origin already exist!":
+          $("#add-origin-name")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
+        case "Origin already exist! Please try again.":
+          $("#edit-origin-name")
+            .addClass("is-invalid")
+            .siblings(".invalid-feedback");
+          break;
         default:
           console.error("Error:", error.message);
           showError(error.message || "An unexpected error occurred.");

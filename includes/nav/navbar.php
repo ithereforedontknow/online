@@ -97,6 +97,12 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
+                <a href="status.php" class="nav-link text-white">
+                    <i class="fa-solid fa-bars-progress fa-lg me-2"></i>
+                    Status
+                </a>
+            </li>
+            <li class="nav-item mb-2">
                 <a class="nav-link text-white" href="vehicle-transactions.php">
                     <i class="fa-solid fa-scroll fa-lg me-2"></i>
                     Vehicle Transactions
