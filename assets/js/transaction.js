@@ -311,6 +311,7 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
 });
 
 async function refreshDepartedList() {
+  $(".departed-table").removeClass("d-none");
   try {
     const response = await $.ajax({
       url: "../../api/transaction.php",
@@ -369,6 +370,7 @@ async function refreshDepartedList() {
 }
 
 async function refreshCancelledList() {
+  $(".cancelled-table").removeClass("d-none");
   try {
     const response = await $.ajax({
       url: "../../api/transaction.php",
@@ -416,6 +418,7 @@ async function refreshCancelledList() {
   }
 }
 async function refreshArrivedList() {
+  $(".arrived-table").removeClass("d-none");
   try {
     const response = await $.ajax({
       url: "../../api/queue.php",
@@ -464,8 +467,7 @@ async function refreshArrivedList() {
 }
 async function refreshTransactionStatus() {
   try {
-    const selectedStatus = $("#statusFilter").val(); // Get the selected status
-
+    const selectedStatus = $("#statusFilter").val();
     const response = await $.ajax({
       url: "../../api/transaction.php",
       method: "POST",
@@ -473,7 +475,7 @@ async function refreshTransactionStatus() {
       dataType: "json",
     });
 
-    console.log("Response:", response); // Log the response
+    console.log("Response:", response);
 
     if (response.success) {
       const statusProgressMap = {
@@ -485,7 +487,6 @@ async function refreshTransactionStatus() {
         done: 100,
       };
 
-      // Filter transactions if a specific status is selected
       const filteredTransactions = selectedStatus
         ? response.data.filter(
             (transaction) =>
@@ -498,40 +499,98 @@ async function refreshTransactionStatus() {
           statusProgressMap[transaction.status.toLowerCase()] || 0;
 
         return `
-          <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-              <div class="card-body">
-                <h5 class="card-title fw-bold">Plate Number: ${
-                  transaction.plate_number
-                }</h5>
-                <h5 class="card-title fw-bold">Driver: ${
-                  transaction.driver_fname
-                } ${transaction.driver_lname}</h5>
-                <h5 class="card-title fw-bold">Helper: ${
-                  transaction.helper_fname
-                } ${transaction.helper_lname}</h5>
-                <p class="card-text">Status: ${transaction.status}</p>
-                <div class="progress ">
-                  <div
-                    class="progress-bar progress-bar-striped progress-bar-animated ${
-                      progressValue === 100 ? "bg-success" : "bg-primary"
-                    }"
-                    role="progressbar"
-                    style="width: ${progressValue}%"
-                    aria-valuenow="${progressValue}"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  >
-                    ${progressValue}%
+              <div class="col-md-4" style='cursor: pointer'>
+                  <div class="flip-card">
+                      <div class="flip-card-inner">
+                          <!-- Front of card -->
+                          <div class="flip-card-front">
+                              <div class="card shadow-sm mb-4">
+                                  <div class="card-body">
+                                      <h6 class="card-title fw-bold">Plate Number: ${
+                                        transaction.plate_number
+                                      }</h6>
+                                      <h6 class="card-title fw-bold">Driver: ${
+                                        transaction.driver_fname
+                                      } ${transaction.driver_lname}</h6>
+                                      <h6 class="card-title fw-bold">Helper: ${
+                                        transaction.helper_fname
+                                      } ${transaction.helper_lname}</h6>
+                                      <p class="card-text">Status: ${
+                                        transaction.status
+                                      }</p>
+                                      <div class="progress">
+                                          <div class="progress-bar progress-bar-striped progress-bar-animated ${
+                                            progressValue === 100
+                                              ? "bg-success"
+                                              : "bg-primary"
+                                          }"
+                                              role="progressbar"
+                                              style="width: ${progressValue}%"
+                                              aria-valuenow="${progressValue}"
+                                              aria-valuemin="0"
+                                              aria-valuemax="100">
+                                              ${progressValue}%
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <!-- Back of card -->
+                          <div class="flip-card-back">
+                              <div class="card shadow-sm mb-4">
+                                  <div class="card-body">
+                                      <div class="details-row">
+                                          <span class="details-label">Arrival Time:</span>
+                                          <span>${
+                                            transaction.arrival_time || "N/A"
+                                          }</span>
+                                      </div>
+                                      <div class="details-row">
+                                          <span class="details-label">Time of Entry (to unload):</span>
+                                          <span>${
+                                            transaction.time_of_entry || "N/A"
+                                          }</span>
+                                      </div>
+                                      <div class="details-row">
+                                          <span class="details-label">Ordinal:</span>
+                                          <span>${
+                                            transaction.ordinal || "N/A"
+                                          }</span>
+                                      </div>
+                                      <div class="details-row">
+                                          <span class="details-label">Shift:</span>
+                                          <span>${
+                                            transaction.shift || "N/A"
+                                          }</span>
+                                      </div>
+                                      <div class="details-row">
+                                          <span class="details-label">Schedule:</span>
+                                          <span>${
+                                            transaction.schedule || "N/A"
+                                          }</span>
+                                      </div>
+                                      <div class="details-row">
+                                          <span class="details-label">Transfer in Line:</span>
+                                          <span>${
+                                            transaction.transfer_in_line ||
+                                            "N/A"
+                                          }</span>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>`;
+              </div>`;
       });
 
-      // Update the HTML content of the transaction column
       $("#transaction-column").html(cards.join(""));
+
+      // Add click event listeners to the cards
+      $(".flip-card").click(function () {
+        $(this).toggleClass("flipped");
+      });
     } else {
       showError(response.message || "Unable to fetch transaction status.");
     }
@@ -585,63 +644,30 @@ $("#add-queue-transaction").submit(async function (e) {
     // Optionally, show an error message to the user
   }
 });
-// Update document.ready
-$(document).ready(function () {
-  // Initially hide arrived and cancelled tables completely
-  $("#arrived-table_wrapper, #cancelled-table_wrapper").hide();
-  $("#arrived-table, #cancelled-table").addClass("d-none");
-
-  // Show only departed table and initialize its DataTable
-  $("#departed-table").removeClass("d-none");
-
-  // Initialize DataTables but only make departed active initially
-  $("#departed-table").DataTable({
-    responsive: true,
-    lengthChange: false,
-  });
-
-  refreshTransactionStatus();
-  // Only load departed list initially
+$(document).ready(() => {
+  // Initially load the Departed list
   refreshDepartedList();
 
-  // Initialize other DataTables without loading data
-  $("#arrived-table, #cancelled-table").DataTable({
-    responsive: true,
-    lengthChange: false,
-  });
-
-  // Update showTable function to handle data loading
-  window.showTable = function (status) {
-    // Hide all table wrappers
-    $(
-      "#departed-table_wrapper, #arrived-table_wrapper, #cancelled-table_wrapper"
-    ).hide();
+  // Pagination navigation click event
+  $(".pagination-nav").click(function (e) {
+    e.preventDefault(); // Prevent default action (i.e., navigating to href="#")
 
     // Hide all tables
-    $(".table").addClass("d-none");
+    $(".departed-table, .arrived-table, .cancelled-table").addClass("d-none");
 
-    // Show the selected table and its wrapper
-    $(`#${status}-table`).removeClass("d-none");
-    $(`#${status}-table_wrapper`).show();
+    // Remove 'active' class from all pagination buttons
+    $(".pagination-nav").parent().removeClass("active");
 
-    // Load data based on selected status
-    switch (status) {
-      case "departed":
-        refreshDepartedList();
-        break;
-      case "arrived":
-        refreshArrivedList();
-        break;
-      case "cancelled":
-        refreshCancelledList();
-        break;
+    // Add 'active' class to clicked button
+    $(this).parent().addClass("active");
+
+    // Check which button was clicked and load corresponding list
+    if ($(this).text().trim() === "Departed") {
+      refreshDepartedList();
+    } else if ($(this).text().trim() === "Arrived") {
+      refreshArrivedList();
+    } else if ($(this).text().trim() === "Cancelled") {
+      refreshCancelledList();
     }
-
-    // Adjust DataTable columns for proper rendering
-    $(`#${status}-table`).DataTable().columns.adjust();
-
-    // Update active state in pagination
-    $(".page-item").removeClass("active");
-    $(`.page-item[data-table="${status}"]`).addClass("active");
-  };
+  });
 });

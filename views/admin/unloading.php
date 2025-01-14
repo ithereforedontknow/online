@@ -14,96 +14,52 @@ include_once('../../includes/header/header-admin.php');
                         <th class="text-center" scope="col">Unloading Time End</th>
                         <th class="text-center" scope="col">Time of Departure</th>
                         <th class="text-center" scope="col">Demurrage</th>
+                        <th class="text-center" scope="col">Action</th>
                     </tr>
                 </thead>
-                <tbody id="transaction-data">
-                    <?php
-                    $stmt = $conn->prepare("SELECT * FROM Transaction
-                        inner join unloading on transaction.transaction_id = unloading.transaction_id
-                        WHERE transaction.status = 'ongoing' ORDER BY time_of_entry DESC");
-                    $stmt->execute();
-                    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    if (count($result) > 0) {
-                        foreach ($result as $row) {
-                    ?>
-                            <tr>
-                                <td class='text-center'><?= $row['to_reference'] ?></td>
-                                <td class='text-center'><?= date('m/d/Y h:i A', strtotime($row['time_of_entry'])) ?></td>
-                                <td class="text-center">
-                                    <?php
-                                    if ($row['status'] === 'standby') {
-                                    ?>
-                                        <form class="unloading-start-form d-flex justify-content-center align-items-center">
-                                            <input type="hidden" name="unloading-start-id" value="<?= $row['transaction_id'] ?>">
-                                            <input type="datetime-local" class="form-control d-none" name="time-of-entry" style="width: auto;" value="<?= date('Y-m-d\TH:i', strtotime($row['time_of_entry'])) ?>" required>
-                                            <input type="datetime-local" class="form-control" name="unloading-start-time" style="width: auto;" required>
-                                            <button type="submit" class="btn btn-primary ms-2">Save</button>
-                                        </form>
-                                    <?php
-                                    } else {
-                                        echo date('m/d/Y h:i A', strtotime($row['unloading_time_start']));
-                                    }
-                                    ?>
-                                </td>
-                                <td class="text-center">
-                                    <?php
-                                    if ($row['unloading_time_end'] === NULL) {
-                                    ?>
-                                        <form class="unloading-end-form d-flex justify-content-center align-items-center">
-                                            <input type="hidden" name="unloading-end-id" value="<?= $row['transaction_id'] ?>">
-                                            <input type="datetime-local" class="form-control d-none" name="unloading-time-start" style="width: auto;" value="<?= date('Y-m-d\TH:i', strtotime($row['unloading_time_start'])) ?>" required>
-                                            <input type="datetime-local" class="form-control" name="unloading-end-time" style="width: auto;" required>
-                                            <button type="submit" class="btn btn-primary ms-2">Save</button>
-                                        </form>
-                                    <?php
-                                    } else {
-                                        echo date('m/d/Y h:i A', strtotime($row['unloading_time_end']));
-                                    }
-                                    ?>
-                                </td>
-                                <td class="text-center">
-                                    <?php
-                                    if ($row['time_of_departure'] === NULL) {
-                                    ?>
-                                        <form class="time-departure-form d-flex justify-content-center align-items-center">
-                                            <input type="hidden" name="time-departure-id" value="<?= $row['transaction_id'] ?>">
-                                            <input type="datetime-local" class="form-control d-none" name="unloading-time-end" style="width: auto;" value="<?= date('Y-m-d\TH:i', strtotime($row['unloading_time_end'])) ?>" required>
-                                            <input type="datetime-local" class="form-control" name="time-departure-time" style="width: auto;" required>
-                                            <button type="submit" class="btn btn-primary ms-2">Done</button>
-                                        </form>
-                                    <?php
-                                    } else {
-                                        echo date('m/d/Y h:i A', strtotime($row['time_of_departure']));
-                                    }
-                                    ?>
-                                </td>
-                                <td class="text-center">
-                                    <?php
-                                    if ($row['demurrage'] == null) {
-                                    ?>
-                                        <input type="text" form="insert-transfer-out-scrap-remarks-<?= htmlspecialchars($row['transaction_id']) ?>"
-                                            class="form-control" name="demurrage" required>
-                                    <?php
-                                    } else {
-                                        echo $row['demurrage'];
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                    <?php
-                        }
-                    } else {
-                        echo "<tr><td colspan='6' class='text-center'>No Ongoing Transactions</td></tr>";
-                    }
-                    ?>
+                <tbody id="unloading-list">
+
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<div class="offcanvas offcanvas-end w-50" tabindex="-1" id="editUnloadingOffCanvas" aria-labelledby="editUnloadingOffCanvasLabel">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title" id="editUnloadingOffCanvasLabel">Edit <span class="fw-bold">unloading</span></h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="edit-unloading-table-form">
+            <input type="hidden" name="unloading-table-id" id="unloading-table-id">
+            <div class="form-floating mb-4">
+                <input type="datetime-local" class="form-control" id="unloading-table-time-entry">
+                <label for="unloading-table-time-entry" class="form-label">Time of Entry</label>
+            </div>
+            <div class="form-floating mb-4">
+                <input type="datetime-local" class="form-control" id="unloading-table-unloading-start">
+                <label for="unloading-table-unloading-start" class="form-label">Unloading Time Start</label>
+            </div>
+            <div class="form-floating mb-4">
+                <input type="datetime-local" class="form-control" id="unloading-table-unloading-end">
+                <label for="unloading-table-unloading-end" class="form-label">Unloading Time End</label>
+            </div>
+            <div class="form-floating mb-4">
+                <input type="datetime-local" class="form-control" id="unloading-table-departure">
+                <label for="unloading-table-departure" class="form-label">Time of Departure</label>
+            </div>
+        </form>
+    </div>
+    <div class="offcanvas-footer d-flex justify-content-end p-3 border-top sticky-bottom">
+        <button type="button" class="btn btn-dark me-2" data-bs-dismiss="offcanvas">Cancel</button>
+        <button type="submit" form="edit-unloading-table-form" class="btn btn-primary">Save</button>
+    </div>
+</div>
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
+<script src="../../assets/js/unloading.js"></script>
 </body>
 
 </html>

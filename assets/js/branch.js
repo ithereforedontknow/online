@@ -229,29 +229,6 @@ $("#add-branch-transaction").submit(async function (event) {
   }
 });
 
-// Enhanced TO Reference formatter
-$("#add-to-reference").on("blur", function () {
-  const originCode = "<?= $originCode ?>";
-  let value = this.value.trim().toUpperCase();
-
-  // Remove any existing origin code suffix
-  value = value.replace(new RegExp(`-${originCode}$`), "");
-
-  // Add the origin code suffix
-  this.value = `${value}-${originCode}`;
-
-  // Validate format
-  const referencePattern = /^\d{1,4}-[A-Z]{2}$/;
-  if (!referencePattern.test(this.value)) {
-    $(this).addClass("is-invalid");
-    $(".invalid-feedback").text(
-      "Invalid TO Reference format. Expected: XXXX-XX"
-    );
-  } else {
-    $(this).removeClass("is-invalid");
-  }
-});
-
 // Clear form handler
 $("#add-clear").click(function () {
   if (confirm("Are you sure you want to clear all fields?")) {

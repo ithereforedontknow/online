@@ -9,77 +9,76 @@ include_once('../../includes/header/header-admin.php');
                 <i class="fa-solid fa-plus fa-lg me-2" style="color: #ffffff;"></i> New Transaction
             </button>
         </div>
-        <!-- Pagination Navigation -->
         <nav class="">
             <ul class="pagination">
-                <li class="page-item active" data-table="departed">
-                    <a class="page-link pagination-nav" href="#" onclick="showTable('departed')">Departed</a>
+                <li class="page-item active">
+                    <a class="page-link pagination-nav" href="#">Departed</a>
                 </li>
-                <li class="page-item" data-table="arrived">
-                    <a class="page-link pagination-nav" href="#" onclick="showTable('arrived')">Arrived</a>
+                <li class="page-item">
+                    <a class="page-link pagination-nav" href="#">Arrived</a>
                 </li>
-                <li class="page-item" data-table="cancelled">
-                    <a class="page-link pagination-nav" href="#" onclick="showTable('cancelled')">Cancelled</a>
+                <li class="page-item">
+                    <a class="page-link pagination-nav" href="#">Cancelled</a>
                 </li>
             </ul>
         </nav>
+        <div class="departed-table">
+            <table class="table table-hover text-center table-light" id="departed-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" scope="col">TO Reference</th>
+                        <th class="text-center" scope="col">GUIA</th>
+                        <th class="text-center" scope="col">Hauler</th>
+                        <th class="text-center" scope="col">Plate Number</th>
+                        <th class="text-center" scope="col">Project</th>
+                        <th class="text-center" scope="col">Origin</th>
+                        <th class="text-center" scope="col">Arrival Time</th>
+                        <th class="text-center" scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="departed-list">
 
-        <!-- Departed Table -->
-        <table class="table table-hover text-center table-light" id="departed-table">
-            <thead>
-                <tr>
-                    <th class="text-center" scope="col">TO Reference</th>
-                    <th class="text-center" scope="col">GUIA</th>
-                    <th class="text-center" scope="col">Hauler</th>
-                    <th class="text-center" scope="col">Plate Number</th>
-                    <th class="text-center" scope="col">Project</th>
-                    <th class="text-center" scope="col">Origin</th>
-                    <th class="text-center" scope="col">Arrival Time</th>
-                    <th class="text-center" scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody id="departed-list">
+                </tbody>
+            </table>
+        </div>
+        <div class="arrived-table d-none">
+            <table class="table table-hover text-center table-light" id="arrived-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" scope="col">TO Reference</th>
+                        <th class="text-center" scope="col">GUIA</th>
+                        <th class="text-center" scope="col">Hauler</th>
+                        <th class="text-center" scope="col">Plate Number</th>
+                        <th class="text-center" scope="col">Project</th>
+                        <th class="text-center" scope="col">Origin</th>
+                        <th class="text-center" scope="col">Arrival Time</th>
+                        <th class="text-center" scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="arrived-list">
 
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+        <div class="cancelled-table d-none">
+            <table class="table table-hover text-center table-light" id="cancelled-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" scope="col">TO Reference</th>
+                        <th class="text-center" scope="col">GUIA</th>
+                        <th class="text-center" scope="col">Hauler</th>
+                        <th class="text-center" scope="col">Plate Number</th>
+                        <th class="text-center" scope="col">Project</th>
+                        <th class="text-center" scope="col">Origin</th>
+                        <th class="text-center" scope="col">Arrival Time</th>
+                        <th class="text-center" scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="cancelled-list">
 
-        <!-- Arrived Table -->
-        <table class="table table-hover text-center table-light d-none" id="arrived-table">
-            <thead>
-                <tr>
-                    <th class="text-center" scope="col">TO Reference</th>
-                    <th class="text-center" scope="col">GUIA</th>
-                    <th class="text-center" scope="col">Hauler</th>
-                    <th class="text-center" scope="col">Plate Number</th>
-                    <th class="text-center" scope="col">Project</th>
-                    <th class="text-center" scope="col">Origin</th>
-                    <th class="text-center" scope="col">Arrival Time</th>
-                    <th class="text-center" scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody id="arrived-list">
-
-            </tbody>
-        </table>
-
-        <!-- Cancelled Table -->
-        <table class="table table-hover text-center table-light d-none" id="cancelled-table">
-            <thead>
-                <tr>
-                    <th class="text-center" scope="col">TO Reference</th>
-                    <th class="text-center" scope="col">GUIA</th>
-                    <th class="text-center" scope="col">Hauler</th>
-                    <th class="text-center" scope="col">Plate Number</th>
-                    <th class="text-center" scope="col">Project</th>
-                    <th class="text-center" scope="col">Origin</th>
-                    <th class="text-center" scope="col">Arrival Time</th>
-                    <th class="text-center" scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody id="cancelled-list">
-
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 <div class="offcanvas offcanvas-end w-50" tabindex="-1" id="addQueueOffcanvas" aria-labelledby="addQueueOffcanvas-label">

@@ -27,7 +27,7 @@ class TransactionManager
     }
     public function getTransactionStatus()
     {
-        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id";
+        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname, arrival.arrival_time, unloading.time_of_entry, queue.ordinal, queue.shift, queue.schedule, queue.transfer_in_line FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id LEFT JOIN queue on queue.transaction_id = transaction.transaction_id LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -128,7 +128,7 @@ class TransactionManager
                 INNER JOIN project ON transaction.project_id = project.project_id
                 INNER JOIN origin ON transaction.origin_id = origin.origin_id
                 WHERE transaction.status = :status
-                ORDER BY transaction_id DESC';
+                ORDER BY transaction.transaction_id DESC';
         try {
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['status' => $status]);
