@@ -224,25 +224,25 @@ class queueManager
     public function timeOfEntry($transaction_id, $time_of_entry)
     {
         try {
-            // Get arrival time
-            $stmt = $this->conn->prepare("SELECT arrival_time FROM arrival WHERE transaction_id = :transaction_id");
+            // Get time of departure
+            $stmt = $this->conn->prepare("SELECT time_of_departure FROM transaction WHERE transaction_id = :transaction_id");
             $stmt->execute([
                 ':transaction_id' => $transaction_id
             ]);
 
-            $arrivalTime = $stmt->fetchColumn();
+            $timeOfDeparture = $stmt->fetchColumn();
 
-            if (!$arrivalTime) {
+            if (!$timeOfDeparture) {
                 $this->sendResponse(false, "Arrival time not found for this transaction");
             }
 
 
-            $arrivalTimeTimestamp = strtotime($arrivalTime);
+            $timeOfDepartureTimestamp = strtotime($timeOfDeparture);
             $timeOfEntryTimestamp = strtotime($time_of_entry);
 
-            if (is_numeric($arrivalTimeTimestamp) && is_numeric($timeOfEntryTimestamp)) {
+            if (is_numeric($timeOfDepartureTimestamp) && is_numeric($timeOfEntryTimestamp)) {
                 // Calculate the time difference in seconds
-                $timeDifference = $timeOfEntryTimestamp - $arrivalTimeTimestamp;
+                $timeDifference = $timeOfEntryTimestamp - $timeOfDepartureTimestamp;
 
                 // Convert time difference to hours, minutes, and seconds
                 $hours = floor($timeDifference / 3600);

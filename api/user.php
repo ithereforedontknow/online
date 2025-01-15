@@ -193,6 +193,25 @@ class UserManager
             $this->sendResponse(false, 'Error retrieving users');
         }
     }
+    public function updateProfile($id, $fname, $lname, $mname, $email, $username, $password)
+    {
+        try {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $this->conn->prepare("UPDATE users SET fname = :fname, lname = :lname, mname = :mname, email = :email, username = :username, password = :password WHERE id = :id");
+            $stmt->execute([
+                'fname' => $fname,
+                'lname' => $lname,
+                'mname' => $mname,
+                'email' => $email,
+                'username' => $username,
+                'password' => $hashed_password,
+                'id' => $id
+            ]);
+
+            $this->sendResponse(true, 'Profile updated successfully');
+        } catch (Exception $e) {
+        }
+    }
 }
 
 // Handle request
@@ -237,6 +256,13 @@ try {
                         $userManager->activateUser($_POST['id']);
                     } else {
                         $userManager->sendResponse(false, 'Missing required fields for activating user');
+                    }
+                    break;
+                case 'update profile':
+                    if (isset($_POST['id'], $_POST['fname'], $_POST['lname'], $_POST['mname'], $_POST['email'], $_POST['username'], $_POST['userlevel'], $_POST['branch'])) {
+                        $userManager->updateProfile($_POST['id'], $_POST['fname'], $_POST['lname'], $_POST['mname'], $_POST['email'], $_POST['username'], $_POST['password']);
+                    } else {
+                        $userManager->sendResponse(false, 'Missing required fields for updating user');
                     }
                     break;
                 default:

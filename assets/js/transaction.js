@@ -31,6 +31,35 @@ const transactionManager = {
     return this.request("restore", { id });
   },
 };
+$(document).ready(() => {
+  // Initially load the Departed list
+  refreshDepartedList();
+  refreshFinishedTransactions();
+
+  // Pagination navigation click event
+  $(".pagination-nav").click(function (e) {
+    e.preventDefault(); // Prevent default action (i.e., navigating to href="#")
+
+    // Hide all tables
+    $(".departed-table, .arrived-table, .cancelled-table").addClass("d-none");
+
+    // Remove 'active' class from all pagination buttons
+    $(".pagination-nav").parent().removeClass("active");
+
+    // Add 'active' class to clicked button
+    $(this).parent().addClass("active");
+
+    // Check which button was clicked and load corresponding list
+    if ($(this).text().trim() === "Departed") {
+      refreshDepartedList();
+    } else if ($(this).text().trim() === "Arrived") {
+      refreshArrivedList();
+    } else if ($(this).text().trim() === "Cancelled") {
+      refreshCancelledList();
+    }
+  });
+});
+
 function showError(message) {
   // Implement error display logic (e.g., alert or a designated error div)
   // alert(message);
@@ -227,38 +256,98 @@ $("#add-transaction").submit(async function (e) {
   }
 });
 function cancelTransaction(id) {
-  transactionManager
-    .cancelTransaction(id)
-    .then(() => {
-      refreshDepartedList();
-      refreshCancelledList();
-    })
-    .catch((error) => {
-      console.error("Transaction cancellation failed:", error);
-      // Optionally, show an error message to the user
-    });
+  Swal.fire({
+    title: "Are you sure?",
+    text: "Confirm canceling this transaction",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#1f3a69",
+    cancelButtonColor: "#5c636a",
+    confirmButtonText: "Yes, cancel it!",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      transactionManager
+        .cancelTransaction(id)
+        .then(() => {
+          refreshDepartedList();
+        })
+        .catch((error) => {
+          console.error("Transaction cancellation failed:", error);
+          // Optionally, show an error message to the user
+        });
+    }
+  });
+}
+function cancelArrivedTransaction(id) {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "Confirm canceling this transaction",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#1f3a69",
+    cancelButtonColor: "#5c636a",
+    confirmButtonText: "Yes, cancel it!",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      transactionManager
+        .cancelTransaction(id)
+        .then(() => {
+          refreshArrivedList();
+        })
+        .catch((error) => {
+          console.error("Transaction cancellation failed:", error);
+          // Optionally, show an error message to the user
+        });
+    }
+  });
 }
 function restoreTransaction(id) {
   transactionManager
     .restoreTransaction(id)
     .then(() => {
       refreshCancelledList();
-      refreshDepartedList();
     })
     .catch((error) => {
       console.error("Transaction restoration failed:", error);
       // Optionally, show an error message to the user
     });
 }
-// Event delegation for dynamically created forms
+function printTransaction(transaction_id) {
+  const formData = new FormData();
+  formData.append("action", "print transaction");
+  formData.append("transaction_id", transaction_id);
+
+  fetch("../../api/transaction.php", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((err) => Promise.reject(err));
+      }
+      return response.blob();
+    })
+    .then((blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `transaction_${transaction_id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    })
+    .catch((error) => {
+      console.error("Failed to print transaction:", error);
+      alert("Failed to generate PDF. Please try again.");
+    });
+}
+// Modified event handler
 $(document).on("submit", ".arrival-transaction-form", async function (event) {
   event.preventDefault();
-
-  // Gather data from the form
   const transactionId = $(this).find("#arrived-transaction-id").val();
   const arrivalTime = $(this).find("#arrived-arrival-time").val();
 
-  // Validate data
   if (!transactionId || !arrivalTime) {
     Swal.fire({
       title: "Error",
@@ -276,7 +365,6 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
   };
 
   try {
-    // Send data to the server
     const response = await $.ajax({
       url: "../../api/transaction.php",
       method: "POST",
@@ -284,17 +372,23 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
       dataType: "json",
     });
 
-    // Handle server response
     if (response.success) {
       Swal.fire({
         title: "Updated!",
         text: "Transaction added to arrived successfully.",
         icon: "success",
-        showConfirmButton: false,
-        timer: 1500,
+        showConfirmButton: true,
+        confirmButtonText: "Print transaction form",
+        confirmButtonColor: "#1f3a69",
+        showCancelButton: true,
+        cancelButtonText: "No",
+        cancelButtonColor: "#5c636a",
+      }).then((result) => {
+        console.log(transactionId);
+        if (result.isConfirmed) {
+          printTransaction(transactionId);
+        }
       });
-
-      // Refresh transaction list
       refreshDepartedList();
     } else {
       throw new Error(response.message || "Unknown error occurred.");
@@ -396,10 +490,18 @@ async function refreshCancelledList() {
             <td class="text-center">${transaction.plate_number}</td>
             <td class="text-center">${transaction.project_name}</td>
             <td class="text-center">${transaction.origin_name}</td>
-            <td class="text-center">-</td>
-            <td class="text-center">
-              <button type="button" class="btn btn-primary ms-2" onclick="restoreTransaction(${transaction.transaction_id})">Restore</button>
-            </td>
+            <td class="text-center">${
+              new Date(transaction.time_of_departure).toLocaleString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              }) || "-"
+            }</td>
+            <td class="text-center">&#x20B1; ${parseFloat(
+              transaction.demurrage
+            ).toFixed(2)}</td>
           </tr>
         `
         )
@@ -446,7 +548,9 @@ async function refreshArrivedList() {
             <td class="text-center">${transaction.origin_name}</td>
             <td class="text-center">${transaction.arrival_time}</td>
             <td class="text-center">
-              <button type="button" class="btn btn-primary ms-2" onclick="queueTransaction(${transaction.transaction_id})">Queue</button>
+              <button type="button" class="btn btn-primary" onclick="queueTransaction(${transaction.transaction_id})">Queue</button>
+              <button type="button" class="btn btn-secondary ms-2" onclick="cancelArrivedTransaction(${transaction.transaction_id})">Cancel</button>
+              <button type="button" class="btn btn-secondary ms-2" onclick="printTransaction(${transaction.transaction_id})"><i class="fa-solid fa-print"></i></button>
             </td>
           </tr>
         `
@@ -465,6 +569,7 @@ async function refreshArrivedList() {
     console.error("Error fetching arrived transactions:", error);
   }
 }
+
 async function refreshTransactionStatus() {
   try {
     const selectedStatus = $("#statusFilter").val();
@@ -474,8 +579,6 @@ async function refreshTransactionStatus() {
       data: { action: "transaction status" },
       dataType: "json",
     });
-
-    console.log("Response:", response);
 
     if (response.success) {
       const statusProgressMap = {
@@ -506,19 +609,19 @@ async function refreshTransactionStatus() {
                           <div class="flip-card-front">
                               <div class="card shadow-sm mb-4">
                                   <div class="card-body">
-                                      <h6 class="card-title fw-bold">Plate Number: ${
+                                      <h6 class="card-title fw-bold mb-3">Plate Number: ${
                                         transaction.plate_number
                                       }</h6>
-                                      <h6 class="card-title fw-bold">Driver: ${
+                                      <h6 class="card-title fw-bold mb-3">Driver: ${
                                         transaction.driver_fname
                                       } ${transaction.driver_lname}</h6>
-                                      <h6 class="card-title fw-bold">Helper: ${
+                                      <h6 class="card-title fw-bold mb-2">Helper: ${
                                         transaction.helper_fname
                                       } ${transaction.helper_lname}</h6>
                                       <p class="card-text">Status: ${
                                         transaction.status
                                       }</p>
-                                      <div class="progress">
+                                      <div class="progress mb-3">
                                           <div class="progress-bar progress-bar-striped progress-bar-animated ${
                                             progressValue === 100
                                               ? "bg-success"
@@ -538,18 +641,48 @@ async function refreshTransactionStatus() {
                           
                           <!-- Back of card -->
                           <div class="flip-card-back">
-                              <div class="card shadow-sm mb-4">
+                              <div class="card shadow-sm">
                                   <div class="card-body">
                                       <div class="details-row">
                                           <span class="details-label">Arrival Time:</span>
                                           <span>${
-                                            transaction.arrival_time || "N/A"
+                                            transaction.arrival_time
+                                              ? new Intl.DateTimeFormat(
+                                                  "en-US",
+                                                  {
+                                                    year: "numeric",
+                                                    month: "2-digit",
+                                                    day: "2-digit",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                  }
+                                                ).format(
+                                                  new Date(
+                                                    transaction.arrival_time
+                                                  )
+                                                )
+                                              : "N/A"
                                           }</span>
                                       </div>
                                       <div class="details-row">
                                           <span class="details-label">Time of Entry (to unload):</span>
                                           <span>${
-                                            transaction.time_of_entry || "N/A"
+                                            transaction.time_of_entry
+                                              ? new Intl.DateTimeFormat(
+                                                  "en-US",
+                                                  {
+                                                    year: "numeric",
+                                                    month: "2-digit",
+                                                    day: "2-digit",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                  }
+                                                ).format(
+                                                  new Date(
+                                                    transaction.time_of_entry
+                                                  )
+                                                )
+                                              : "N/A"
                                           }</span>
                                       </div>
                                       <div class="details-row">
@@ -644,30 +777,84 @@ $("#add-queue-transaction").submit(async function (e) {
     // Optionally, show an error message to the user
   }
 });
-$(document).ready(() => {
-  // Initially load the Departed list
-  refreshDepartedList();
+// Finished transactions
 
-  // Pagination navigation click event
-  $(".pagination-nav").click(function (e) {
-    e.preventDefault(); // Prevent default action (i.e., navigating to href="#")
+async function refreshFinishedTransactions() {
+  try {
+    const response = await $.ajax({
+      url: "../../api/transaction.php",
+      method: "POST",
+      data: { action: "list finished", status: "done" },
+      dataType: "json",
+    });
+    if (response.success) {
+      const list = $("#finished-transactions-list");
 
-    // Hide all tables
-    $(".departed-table, .arrived-table, .cancelled-table").addClass("d-none");
+      if ($.fn.DataTable.isDataTable("#finished-transactions-table")) {
+        $("#finished-transactions-table").DataTable().destroy();
+      }
 
-    // Remove 'active' class from all pagination buttons
-    $(".pagination-nav").parent().removeClass("active");
+      const rows = response.data
+        .map(
+          (transaction) => `
+          <tr>
+            <td class="text-center">${transaction.to_reference}</td>
+            <td class="text-center">${transaction.kilos}</td>
+            <td class="text-center">
+              <form id="insert-transfer-out-scrap-remarks-${
+                transaction.transaction_id
+              }">
+                <input type="hidden" name="transaction_id" value="${
+                  transaction.transaction_id
+                }">
+                <input type="number" class="form-control" name="transfer_out_kilos" required value="${
+                  transaction.transfer_out_kilos || ""
+                }">
+              </form>
+            </td>
+            <td class="text-center">
+              <input type="number" form="insert-transfer-out-scrap-remarks-${
+                transaction.transaction_id
+              }" class="form-control" name="scrap" required value="${
+            transaction.scrap || ""
+          }">
+            </td>
+            <td class="text-center">
+              <input type="number" form="insert-transfer-out-scrap-remarks-${
+                transaction.transaction_id
+              }" class="form-control" name="remarks" required value="${
+            transaction.remarks || ""
+          }">
+            </td>
+            <td class="text-center">
+              <button type="submit" form="insert-transfer-out-scrap-remarks-${
+                transaction.transaction_id
+              }" class="btn btn-primary">Save</button>
+              <button type="button" class="btn btn-secondary ms-2" onclick="editFinishedtransactions(${JSON.stringify(
+                transaction
+              )})">Edit</button>
 
-    // Add 'active' class to clicked button
-    $(this).parent().addClass("active");
+          </tr>
+        `
+        )
+        .join("");
 
-    // Check which button was clicked and load corresponding list
-    if ($(this).text().trim() === "Departed") {
-      refreshDepartedList();
-    } else if ($(this).text().trim() === "Arrived") {
-      refreshArrivedList();
-    } else if ($(this).text().trim() === "Cancelled") {
-      refreshCancelledList();
+      list.html(rows);
+      $("#finished-transactions-table").DataTable({
+        responsive: true,
+        lengthChange: false,
+      });
+    } else {
+      showError(response.message || "Unable to fetch finished transactions.");
     }
-  });
-});
+  } catch (error) {
+    console.error("Error fetching finished transactions:", error);
+  }
+}
+$("input[name='transfer_out_kilos'], input[name='scrap']").on(
+  "input",
+  function (e) {
+    const val = this.value.replace(/\D/g, "");
+    this.value = val;
+  }
+);

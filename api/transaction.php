@@ -219,10 +219,51 @@ class TransactionManager
     public function cancelTransaction($id)
     {
         try {
-            $stmt = $this->conn->prepare("UPDATE transaction SET status = 'cancelled' WHERE transaction_id = :id");
+            // Fetch the time of departure for the given transaction
+            $stmt = $this->conn->prepare("SELECT time_of_departure FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([':transaction_id' => $id]);
+
+            $timeOfDeparture = $stmt->fetchColumn();
+            if ($timeOfDeparture === false) {
+                throw new Exception("Time of departure not found");
+            }
+
+            $timeOfDepartureTimestamp = strtotime($timeOfDeparture);
+            $currentTimestamp = time();
+
+            // Calculate the time difference in seconds
+            $timeDifferenceInSeconds = $currentTimestamp - $timeOfDepartureTimestamp;
+
+            // Convert the time difference to hours, minutes, and seconds
+            $hoursSpent = floor($timeDifferenceInSeconds / 3600);
+            $minutesSpent = floor(($timeDifferenceInSeconds % 3600) / 60);
+            $secondsSpent = $timeDifferenceInSeconds % 60;
+
+            // Fetch the latest demurrage rate
+            $stmt = $this->conn->prepare("SELECT demurrage FROM demurrage ORDER BY updated_at DESC LIMIT 1");
+            $stmt->execute();
+            $demurrageRatePerHour = $stmt->fetchColumn();
+
+            if ($demurrageRatePerHour === false) {
+                throw new Exception("Demurrage rate not found");
+            }
+
+            $demurrageCharge = 0;
+            $demurrageRatePerSecond = $demurrageRatePerHour / 3600; // Convert hourly rate to per-second rate
+
+            if ($timeDifferenceInSeconds > (48 * 3600)) { // More than 48 hours
+                $chargeableSeconds = $timeDifferenceInSeconds - (48 * 3600);
+                $demurrageCharge = $chargeableSeconds * $demurrageRatePerSecond;
+            }
+
+            // Update the transaction with the time spent and demurrage charge
+            $stmt = $this->conn->prepare("UPDATE transaction SET time_spent_waiting_area = :hours, demurrage = :demurrage, status = 'cancelled' WHERE transaction_id = :transaction_id");
             $stmt->execute([
-                'id' => $id
+                ':hours' => $hoursSpent,
+                ':demurrage' => $demurrageCharge,
+                ':transaction_id' => $id
             ]);
+
             $this->sendResponse(true, 'Transaction cancelled successfully');
         } catch (PDOException $e) {
             // Log the error (in a production environment, log to a file)
@@ -261,13 +302,117 @@ class TransactionManager
         } catch (PDOException $e) {
             // Log the error (in a production environment, log to a file)
             error_log('Database error: ' . $e->getMessage());
-            $this->sendResponse(false, 'Error adding transaction to arrived');
+            $this->sendResponse(false, 'Error adding transaction to arrived', $transaction_id);
+        }
+    }
+    // PHP Function
+    public function printTransaction($transaction_id)
+    {
+        require_once('../fpdf/fpdf.php');
+        try {
+            // Add error logging
+            error_log("Starting PDF generation for transaction: " . $transaction_id);
+
+            $stmt = $this->conn->prepare("
+            SELECT t.transaction_id, t.to_reference, t.guia, t.no_of_bales, t.kilos,
+                   v.plate_number, 
+                   d.driver_fname, d.driver_lname,
+                   h.helper_fname, h.helper_lname,
+                   p.project_name,
+                   o.origin_name,
+                   ha.hauler_name
+            FROM transaction t
+            INNER JOIN vehicle v ON t.vehicle_id = v.vehicle_id
+            INNER JOIN driver d ON t.driver_id = d.driver_id
+            INNER JOIN helper h ON t.helper_id = h.helper_id
+            INNER JOIN project p ON t.project_id = p.project_id
+            INNER JOIN origin o ON t.origin_id = o.origin_id
+            INNER JOIN hauler ha ON t.hauler_id = ha.hauler_id
+            WHERE t.transaction_id = :transaction_id
+        ");
+
+            $stmt->execute([':transaction_id' => $transaction_id]);
+            $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$transaction) {
+                error_log("Transaction not found: " . $transaction_id);
+                throw new Exception('Transaction not found');
+            }
+
+            // Clear any output buffers
+            while (ob_get_level()) ob_end_clean();
+
+            // Generate PDF
+            $pdf = new FPDF('L', 'mm', 'A4'); // Set to landscape
+            $pdf->AddPage();
+
+            // Add centered header image
+            $imagePath = '../assets/img/ulpi agoo.png';
+            if (file_exists($imagePath)) {
+                $pdf->Image($imagePath, ($pdf->GetPageWidth() - 100) / 2, 10, 100); // Center the image
+            } else {
+                error_log("Header image not found at: " . $imagePath);
+            }
+
+            // Add title below image
+            $pdf->Ln(30); // Space after image
+            $pdf->SetFont('Arial', 'B', 14);
+            $pdf->Ln(10);
+
+            // Add transaction details
+            $pdf->SetFont('Arial', '', 12);
+            $details = [
+                'TO Reference' => $transaction['to_reference'],
+                'Guia Number' => $transaction['guia'],
+                'Plate Number' => $transaction['plate_number'],
+                'Driver' => $transaction['driver_fname'] . ' ' . $transaction['driver_lname'],
+                'Helper' => $transaction['helper_fname'] . ' ' . $transaction['helper_lname'],
+                'Project' => $transaction['project_name'],
+                'Origin' => $transaction['origin_name'],
+                'Hauler' => $transaction['hauler_name'],
+                'Number of Bales' => $transaction['no_of_bales'],
+                'Kilos' => $transaction['kilos']
+            ];
+
+            foreach ($details as $label => $value) {
+                $pdf->Cell(60, 10, $label . ':', 0, 0);
+                $pdf->Cell(0, 10, $value, 0, 1);
+            }
+
+            // Output PDF
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="transaction_' . $transaction_id . '.pdf"');
+            $pdf->Output('D', 'transaction_' . $transaction_id . '.pdf');
+            exit;
+        } catch (Exception $e) {
+            error_log("PDF Generation Error: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error generating PDF: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+    public function getFinishedTransactions()
+    {
+        $sql = "SELECT * FROM transaction WHERE status = 'done'";
+
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $this->sendResponse(true, 'Success', $transactions);
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
         }
     }
 }
 
 // Main API Handler
 try {
+
     if (!isset($conn) || $conn === null) {
         throw new Exception('Database connection not established');
     }
@@ -315,6 +460,17 @@ try {
                 } else {
                     $transactionManager->sendResponse(false, 'Missing transaction ID or arrival time');
                 }
+                break;
+            case 'print transaction':
+                $transaction_id = $_POST['transaction_id'] ?? null;
+                if ($transaction_id) {
+                    $transactionManager->printTransaction($transaction_id);
+                } else {
+                    $transactionManager->sendResponse(false, 'Missing transaction ID');
+                }
+                break;
+            case 'list finished':
+                $transactionManager->getFinishedTransactions();
                 break;
             default:
                 $transactionManager->sendResponse(false, 'Invalid action');

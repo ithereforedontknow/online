@@ -78,7 +78,8 @@ $("#edit-profile-form").submit((event) => {
   }).then((result) => {
     if (result.isConfirmed) {
       const data = {
-        userId: $("#userId").val(), // Assuming user ID is needed for the request
+        action: "update profile",
+        id: $("#userId").val(), // Assuming user ID is needed for the request
         username: $("#edit-username").val(),
         fname: $("#edit-firstname").val(),
         mname: $("#edit-middlename").val(),
@@ -86,13 +87,13 @@ $("#edit-profile-form").submit((event) => {
         new_password: newPassword,
       };
 
-      $.post("./api/update-profile.php", data)
+      $.post("../../api/user.php", data)
         .done((response) => {
           Swal.fire({
             title: "Updated!",
             icon: "success",
             showConfirmButton: false,
-            timer: 1000,
+            timer: 1500,
             didClose: () => {
               window.location.reload(); // Reload the page to reflect changes
             },
@@ -154,8 +155,10 @@ $("#add-branch-transaction").submit(async function (event) {
 
     // Time validation
     const departureTime = new Date($("#add-time-departure").val());
-    if (departureTime < new Date()) {
-      errors.push("Time of Departure cannot be in the past");
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (departureTime < yesterday) {
+      $("#add-time-departure").addClass("is-invalid");
     }
 
     return errors;
@@ -201,27 +204,24 @@ $("#add-branch-transaction").submit(async function (event) {
   };
 
   try {
-    const response = await fetch("../../api/transaction.php", {
+    const response = await $.ajax({
+      url: "../../api/transaction.php",
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+      data: formData,
     });
 
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      alert("Transaction successfully added!");
-      $("#add-branch-transaction")[0].reset();
-      // Optionally refresh any related data displays
-      if (typeof refreshTransactionList === "function") {
-        refreshTransactionList();
-      }
+    if (response.success) {
+      Swal.fire({
+        icon: "success",
+        title: "Transaction submitted successfully!",
+        text: "Form has been reset.",
+        showConfirmButton: false,
+        timer: 1500,
+      }).then(() => {
+        $("#add-branch-transaction")[0].reset();
+      });
     } else {
-      alert(
-        result.message || "An error occurred while saving the transaction."
-      );
+      alert("Error submitting transaction: " + response.message);
     }
   } catch (error) {
     console.error("Error submitting transaction:", error);

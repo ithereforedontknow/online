@@ -71,7 +71,7 @@ include_once('../../includes/header/header-admin.php');
                         <th class="text-center" scope="col">Project</th>
                         <th class="text-center" scope="col">Origin</th>
                         <th class="text-center" scope="col">Arrival Time</th>
-                        <th class="text-center" scope="col">Action</th>
+                        <th class="text-center" scope="col">Demurrage</th>
                     </tr>
                 </thead>
                 <tbody id="cancelled-list">

@@ -69,6 +69,7 @@ include_once('../../includes/header/header-admin.php');
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
 </body>
 
 </html>

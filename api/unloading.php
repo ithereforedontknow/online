@@ -68,6 +68,7 @@ class unloadingManager
             $sql = "UPDATE unloading SET time_of_departure = NOW() WHERE transaction_id = :transaction_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['transaction_id' => $transaction_id]);
+
             $this->sendResponse(true, 'Unloading time end set successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -92,6 +93,18 @@ class unloadingManager
                 ':transaction_id' => $transaction_id
             ]);
             $this->sendResponse(true, 'Unloading updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function setDone($transaction_id)
+    {
+        try {
+            $sql = "UPDATE transaction SET status = 'done' WHERE transaction_id = :transaction_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute(['transaction_id' => $transaction_id]);
+            $this->sendResponse(true, 'Transaction marked as done');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
             $this->sendResponse(false, 'Internal server error');
@@ -129,6 +142,10 @@ try {
             case 'update unloading';
                 $transaction_id = $_POST['transaction_id'] ?? '';
                 $unloadingManager->updateUnloading($_POST);
+                break;
+            case 'set done':
+                $transaction_id = $_POST['transaction_id'] ?? '';
+                $unloadingManager->setDone($transaction_id);
                 break;
             default:
                 $unloadingManager->sendResponse(false, 'Invalid action');

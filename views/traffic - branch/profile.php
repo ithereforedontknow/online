@@ -43,6 +43,11 @@ include_once '../../includes/header/header-branch.php';
                             </div>
                         </div>
                         <div class="mb-3">
+                            <label for="edit-email" class="form-label">New Email:</label>
+                            <input type="text" id="edit-email" class="form-control" value="<?php echo htmlspecialchars($row['email']); ?>" required>
+                            <div class="invalid-feedback">Please provide your email.</div>
+                        </div>
+                        <div class="mb-3">
                             <label for="edit-newPassword" class="form-label">New Password:</label>
                             <input type="password" id="edit-newPassword" name="new_password" class="form-control" required>
                             <div class="invalid-feedback">Please provide a new password.</div>

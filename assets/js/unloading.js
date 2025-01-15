@@ -51,6 +51,35 @@ function setTimeOfDeparture(transaction_id) {
     }
   });
 }
+function setDone(transaction_id) {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "Confirm marking this transaction as done.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#1f3a69",
+    cancelButtonColor: "#5c636a",
+    confirmButtonText: "Yes, mark it!",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const response = unloadingManager.request("set done", {
+        transaction_id,
+      });
+      response.then((response) => {
+        if (response.success) {
+          Swal.fire({
+            title: "Marked!",
+            text: "The transaction has been marked as done.",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          refreshUnloadingList();
+        }
+      });
+    }
+  });
+}
 $("#edit-unloading-table-form").submit(async function (e) {
   e.preventDefault();
   const transaction_id = $("#unloading-table-id").val();
@@ -74,10 +103,16 @@ $("#edit-unloading-table-form").submit(async function (e) {
 });
 function editUnloading(transaction) {
   $("#unloading-table-id").val(transaction.transaction_id);
-  $("#unloading-table-time-entry").val(transaction.time_of_entry);
-  $("#unloading-table-unloading-start").val(transaction.unloading_time_start);
-  $("#unloading-table-unloading-end").val(transaction.unloading_time_end);
-  $("#unloading-table-departure").val(transaction.time_of_departure);
+  $("#unloading-table-time-entry").val(transaction.time_of_entry.slice(0, -3));
+  $("#unloading-table-unloading-start").val(
+    transaction.unloading_time_start.slice(0, -3)
+  );
+  $("#unloading-table-unloading-end").val(
+    transaction.unloading_time_end.slice(0, -3)
+  );
+  $("#unloading-table-departure").val(
+    transaction.time_of_departure.slice(0, -3)
+  );
   $("#editUnloadingOffCanvas").offcanvas("show");
 }
 async function refreshUnloadingList() {
@@ -101,38 +136,77 @@ async function refreshUnloadingList() {
           (transaction) => `
             <tr>
   <td class="text-center">${transaction.to_reference}</td>
-  <td class="text-center">${transaction.time_of_entry}</td>
+  <td class="text-center">${new Date(transaction.time_of_entry).toLocaleString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  )}</td>
   <td class="text-center">
     ${
-      transaction.unloading_time_start ||
-      `<button type="button" class="btn btn-primary" onclick="setUnloadingTimeStart(${transaction.transaction_id})">Set Time</button>`
+      transaction.unloading_time_start
+        ? new Date(transaction.unloading_time_start).toLocaleString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : `<button type="button" class="btn btn-primary" onclick="setUnloadingTimeStart(${transaction.transaction_id})">Set Time</button>`
     }
   </td>
   <td class="text-center">
     ${
-      (transaction.unloading_time_start && transaction.unloading_time_end) ||
-      `<button type="button" class="btn btn-primary" ${
-        transaction.unloading_time_start ? "" : "disabled "
-      }onclick="setUnloadingTimeEnd(${
-        transaction.transaction_id
-      })">Set Time</button>`
+      transaction.unloading_time_start && transaction.unloading_time_end
+        ? `${new Date(transaction.unloading_time_end).toLocaleString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`
+        : `<button type="button" class="btn btn-primary" ${
+            transaction.unloading_time_start ? "" : "disabled "
+          }onclick="setUnloadingTimeEnd(${
+            transaction.transaction_id
+          })">Set Time</button>`
     }
   </td>
   <td class="text-center">
     ${
-      (transaction.unloading_time_end && transaction.time_of_departure) ||
-      `<button type="button" class="btn btn-primary" ${
-        transaction.unloading_time_end ? "" : "disabled "
-      }onclick="setTimeOfDeparture(${
-        transaction.transaction_id
-      })">Set Time</button>`
+      transaction.unloading_time_end && transaction.time_of_departure
+        ? `${new Date(transaction.time_of_departure).toLocaleString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`
+        : `<button type="button" class="btn btn-primary" ${
+            transaction.unloading_time_end ? "" : "disabled "
+          }onclick="setTimeOfDeparture(${
+            transaction.transaction_id
+          })">Set Time</button>`
     }
   </td>
-  <td class="text-center">&#8369; ${transaction.demurrage}</td>
+  <td class="text-center">&#8369; ${parseFloat(transaction.demurrage).toFixed(
+    2
+  )}</td>
   <td class="text-center">
-    <button class="btn btn-primary" onclick='editUnloading(${JSON.stringify(
+    <button class="btn btn-primary me-2" onclick='editUnloading(${JSON.stringify(
       transaction
     )})'>Edit</button>
+    <button class="btn btn-primary" ${
+      transaction.unloading_time_start &&
+      transaction.unloading_time_end &&
+      transaction.time_of_departure
+        ? ""
+        : "disabled "
+    }onclick='setDone(${transaction.transaction_id})'>Set Done</button>
   </td>
 </tr>
 
