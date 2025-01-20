@@ -27,7 +27,7 @@ class TransactionManager
     }
     public function getTransactionStatus()
     {
-        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname, arrival.arrival_time, unloading.time_of_entry, queue.ordinal, queue.shift, queue.schedule, queue.transfer_in_line FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id LEFT JOIN queue on queue.transaction_id = transaction.transaction_id LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id";
+        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname, arrival.arrival_time, unloading.time_of_entry, queue.ordinal, queue.shift, queue.schedule, queue.transfer_in_line FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id LEFT JOIN queue on queue.transaction_id = transaction.transaction_id LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id WHERE transaction.status != 'cancelled' AND transaction.status != 'done'";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -54,10 +54,10 @@ class TransactionManager
                 throw new Exception('TO Reference already exists');
             }
 
-            // Validate time of departure
-            if (strtotime($data['time-departure']) < strtotime(date('Y-m-d H:i:s'))) {
-                throw new Exception('Time of Departure cannot be in the past');
-            }
+            // // Validate time of departure
+            // if (strtotime($data['time-departure']) < strtotime(date('Y-m-d H:i:s'))) {
+            //     throw new Exception('Time of Departure cannot be in the past');
+            // }
             // Update driver availability
             $stmt = $this->conn->prepare("
                 UPDATE driver
@@ -88,12 +88,12 @@ class TransactionManager
                     to_reference, guia, hauler_id, vehicle_id, 
                     driver_id, helper_id, project_id, no_of_bales, 
                     kilos, origin_id, time_of_departure, status,
-                    created_at
+                    created_at, created_by
                 ) VALUES (
                     :to_reference, :guia, :hauler_id, :vehicle_id,
                     :driver_id, :helper_id, :project_id, :no_of_bales,
                     :kilos, :origin_id, :time_of_departure, 'departed',
-                    NOW()
+                    NOW(), :created_by
                 )
             ");
 
@@ -108,9 +108,21 @@ class TransactionManager
                 'no_of_bales' => $data['no-of-bales'],
                 'kilos' => $data['kilos'],
                 'origin_id' => $data['origin-id'],
-                'time_of_departure' => $data['time-departure']
+                'time_of_departure' => $data['time-departure'],
+                'created_by' => $data['created_by']
             ]);
+            $transaction_id = $this->conn->lastInsertId();
 
+            $stmt = $this->conn->prepare("SELECT origin_name from origin where origin_id = :origin_id");
+            $stmt->execute(['origin_id' => $data['origin-id']]);
+            $origin_name = $stmt->fetch(PDO::FETCH_ASSOC)['origin_name'];
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, created_by, details) VALUES (:transaction_id, :created_by, :details)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':created_by' =>  $data['created_by'],
+                ':details' => 'Transaction created by ' . $data['created_by'] . ' from ' . $origin_name,
+            ]);
             $this->conn->commit();
             $this->sendResponse(true, 'Transaction added successfully');
         } catch (Exception $e) {
@@ -173,7 +185,7 @@ class TransactionManager
                 $stmt->execute(['vehicle_id' => $data['vehicle_id']]);
                 $status = "arrived";
                 // Insert the transaction
-                $stmt = $this->conn->prepare("INSERT INTO transaction (to_reference, guia, hauler_id, vehicle_id, driver_id, helper_id, project_id, no_of_bales, kilos, origin_id, time_of_departure, status) VALUES (:to_reference, :guia, :hauler_id, :vehicle_id, :driver_id, :helper_id, :project_id, :no_of_bales, :kilos, :origin_id, :time_departure, :status)");
+                $stmt = $this->conn->prepare("INSERT INTO transaction (to_reference, guia, hauler_id, vehicle_id, driver_id, helper_id, project_id, no_of_bales, kilos, origin_id, time_of_departure, status, created_by) VALUES (:to_reference, :guia, :hauler_id, :vehicle_id, :driver_id, :helper_id, :project_id, :no_of_bales, :kilos, :origin_id, :time_departure, :status, :created_by)");
                 $stmt->execute([
                     'to_reference' => $data['to-reference'],
                     'guia' => $data['guia'],
@@ -186,7 +198,8 @@ class TransactionManager
                     'kilos' => $data['kilos'],
                     'origin_id' => $data['origin'],
                     'time_departure' => $data['time_departure'],
-                    'status' => $status
+                    'status' => $status,
+                    'created_by' => $data['created_by']
                 ]);
 
                 $transaction_id = $this->conn->lastInsertId();
@@ -205,7 +218,7 @@ class TransactionManager
                 $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
                 $stmt->execute([
                     ':transaction_id' => $transaction_id,
-                    ':details' => 'Transaction added by ' . $data['created_by'],
+                    ':details' => $data['to-reference'] . ' Transaction added by ' . $data['created_by'],
                     ':created_by' => $data['created_by']
                 ]);
                 $this->sendResponse(true, 'Transaction added successfully');
@@ -216,12 +229,80 @@ class TransactionManager
             $this->sendResponse(false, 'Error adding transaction');
         }
     }
-    public function cancelTransaction($id)
+    public function updateTranasctionForm($data)
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT * FROM transaction WHERE to_reference = :to_reference AND transaction_id != :transaction_id");
+            $stmt->execute(['to_reference' => $data['to_reference'], 'transaction_id' => $data['transaction_id']]);
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(false, 'TO Reference already exists');
+                return;
+            } // Update driver availability
+            $stmt = $this->conn->prepare("
+        UPDATE driver
+        SET status = '0'
+        WHERE driver_id = :driver_id 
+    ");
+            $stmt->execute(['driver_id' => $data['driver_id']]);
+
+            // Update helper availability
+            $stmt = $this->conn->prepare("
+        UPDATE helper 
+        SET status = '0'
+        WHERE helper_id = :helper_id 
+    ");
+            $stmt->execute(['helper_id' => $data['helper_id']]);
+
+            // Update vehicle availability
+            $stmt = $this->conn->prepare("
+        UPDATE vehicle
+        SET status = '0'
+        WHERE vehicle_id = :vehicle_id 
+    ");
+            $stmt->execute(['vehicle_id' => $data['vehicle_id']]);
+
+            $stmt = $this->conn->prepare("UPDATE transaction SET to_reference = :to_reference, guia = :guia, hauler_id = :hauler_id, vehicle_id = :vehicle_id, driver_id = :driver_id, helper_id = :helper_id, project_id = :project_id, no_of_bales = :no_of_bales, kilos = :kilos, origin_id = :origin_id, time_of_departure = :time_departure WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                'to_reference' => $data['to_reference'],
+                'guia' => $data['guia'],
+                'hauler_id' => $data['hauler_id'],
+                'vehicle_id' => $data['vehicle_id'],
+                'driver_id' => $data['driver_id'],
+                'helper_id' => $data['helper_id'],
+                'project_id' => $data['project_id'],
+                'no_of_bales' => $data['no_of_bales'],
+                'kilos' => $data['kilos'],
+                'origin_id' => $data['origin_id'],
+                'time_departure' => $data['time_departure'],
+                'transaction_id' => $data['transaction_id']
+            ]);
+
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([':transaction_id' => $data['transaction_id']]);
+            $created_by = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([':transaction_id' => $data['transaction_id']]);
+            $to_reference = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $data['transaction_id'],
+                ':details' => $to_reference . ' Transaction updated by ' . $created_by,
+                ':created_by' => $created_by,
+            ]);
+            $this->sendResponse(true, 'Transaction updated successfully');
+        } catch (PDOException $e) {
+            error_log('Error retrieving transactions: ' . $e->getMessage());
+            $this->sendResponse(false, 'Error retrieving transactions');
+        }
+    }
+    public function cancelTransaction($data)
     {
         try {
             // Fetch the time of departure for the given transaction
             $stmt = $this->conn->prepare("SELECT time_of_departure FROM transaction WHERE transaction_id = :transaction_id");
-            $stmt->execute([':transaction_id' => $id]);
+            $stmt->execute([':transaction_id' => $data['transaction_id']]);
 
             $timeOfDeparture = $stmt->fetchColumn();
             if ($timeOfDeparture === false) {
@@ -261,7 +342,14 @@ class TransactionManager
             $stmt->execute([
                 ':hours' => $hoursSpent,
                 ':demurrage' => $demurrageCharge,
-                ':transaction_id' => $id
+                ':transaction_id' => $data['transaction_id']
+            ]);
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $data['transaction_id'],
+                ':details' => 'Transaction cancelled by ' . $data['created_by'],
+                ':created_by' => $data['created_by']
             ]);
 
             $this->sendResponse(true, 'Transaction cancelled successfully');
@@ -288,6 +376,18 @@ class TransactionManager
     public function addToArrived($transaction_id, $arrival_time, $arrival_date)
     {
         try {
+            $stmt = $this->conn->prepare("SELECT time_of_departure FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+
+            $time_of_departure = $stmt->fetchColumn();
+            $timeOfDeparture = new DateTime($time_of_departure);
+            $arrivalTime = new DateTime($arrival_time);
+            if ($timeOfDeparture >= $arrivalTime) {
+                $this->sendResponse(false, 'Arrival time must be after time of departure');
+                return;
+            }
             $stmt = $this->conn->prepare("INSERT INTO arrival (transaction_id, arrival_time, arrival_date) VALUES (:transaction_id, :arrival_time, :arrival_date)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
@@ -298,6 +398,25 @@ class TransactionManager
             $stmt->execute([
                 ':transaction_id' => $transaction_id
             ]);
+
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $created_by = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $to_reference = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => $to_reference . ' Transaction added to arrived by ' . $created_by,
+                ':created_by' => $created_by
+            ]);
             $this->sendResponse(true, 'Transaction added to arrived successfully');
         } catch (PDOException $e) {
             // Log the error (in a production environment, log to a file)
@@ -305,17 +424,15 @@ class TransactionManager
             $this->sendResponse(false, 'Error adding transaction to arrived', $transaction_id);
         }
     }
-    // PHP Function
     public function printTransaction($transaction_id)
     {
         require_once('../fpdf/fpdf.php');
         try {
             // Add error logging
             error_log("Starting PDF generation for transaction: " . $transaction_id);
-
             $stmt = $this->conn->prepare("
             SELECT t.transaction_id, t.to_reference, t.guia, t.no_of_bales, t.kilos,
-                   v.plate_number, 
+                   v.plate_number,
                    d.driver_fname, d.driver_lname,
                    h.helper_fname, h.helper_lname,
                    p.project_name,
@@ -330,37 +447,30 @@ class TransactionManager
             INNER JOIN hauler ha ON t.hauler_id = ha.hauler_id
             WHERE t.transaction_id = :transaction_id
         ");
-
             $stmt->execute([':transaction_id' => $transaction_id]);
             $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
-
             if (!$transaction) {
                 error_log("Transaction not found: " . $transaction_id);
                 throw new Exception('Transaction not found');
             }
-
             // Clear any output buffers
             while (ob_get_level()) ob_end_clean();
-
             // Generate PDF
             $pdf = new FPDF('L', 'mm', 'A4'); // Set to landscape
             $pdf->AddPage();
-
             // Add centered header image
             $imagePath = '../assets/img/ulpi agoo.png';
             if (file_exists($imagePath)) {
-                $pdf->Image($imagePath, ($pdf->GetPageWidth() - 100) / 2, 10, 100); // Center the image
+                $pdf->Image($imagePath, ($pdf->GetPageWidth() - 100) / 2, 2, 100); // Center the image
             } else {
                 error_log("Header image not found at: " . $imagePath);
             }
+            // Add space below image
+            $pdf->Ln(40);
 
-            // Add title below image
-            $pdf->Ln(30); // Space after image
-            $pdf->SetFont('Arial', 'B', 14);
-            $pdf->Ln(10);
+            // Set normal font for all details
+            $pdf->SetFont('Arial', 'B', 16);
 
-            // Add transaction details
-            $pdf->SetFont('Arial', '', 12);
             $details = [
                 'TO Reference' => $transaction['to_reference'],
                 'Guia Number' => $transaction['guia'],
@@ -375,8 +485,11 @@ class TransactionManager
             ];
 
             foreach ($details as $label => $value) {
-                $pdf->Cell(60, 10, $label . ':', 0, 0);
-                $pdf->Cell(0, 10, $value, 0, 1);
+                // Center the label and value
+                $pdf->Cell(0, 12, $label . ': ' . $value, 0, 1, 'C');
+
+                // Add some vertical spacing between lines
+                $pdf->Ln(2);
             }
 
             // Output PDF
@@ -396,7 +509,7 @@ class TransactionManager
     }
     public function getFinishedTransactions()
     {
-        $sql = "SELECT * FROM transaction WHERE status = 'done'";
+        $sql = "SELECT *, transaction.time_of_departure as timeOfDeparture FROM transaction INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id INNER JOIN queue ON transaction.transaction_id = queue.transaction_id INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id WHERE status = 'done'";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -406,6 +519,79 @@ class TransactionManager
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
             $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function updateTransaction($id, $data)
+    {
+        try {
+            $stmt = $this->conn->prepare("UPDATE unloading SET transfer_out_kilos = :transfer_out_kilos, scrap = :scrap, remarks = :remarks WHERE transaction_id = :id");
+            $stmt->execute([
+                ':transfer_out_kilos' => $data['transfer_out_kilos'],
+                ':scrap' => $data['scrap'],
+                ':remarks' => $data['remarks'],
+                ':id' => $id
+            ]);
+            $this->sendResponse(true, 'Transaction updated successfully');
+        } catch (PDOException $e) {
+            // Log the error (in a production environment, log to a file)
+            error_log('Database error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Error updating transaction');
+        }
+    }
+    public function updateFinishedTransaction($id, $data)
+    {
+        try {
+            $stmt = $this->conn->prepare("UPDATE transaction SET to_reference = :to_reference, guia = :guia, hauler_id = :hauler_id, vehicle_id = :vehicle_id, driver_id = :driver_id, helper_id = :helper_id, project_id = :project_id, origin_id = :origin_id, no_of_bales = :no_of_bales, kilos = :kilos, time_of_departure = :time_of_departure WHERE transaction_id = :id");
+            $stmt->execute([
+                ':to_reference' => $data['to_reference'],
+                ':guia' => $data['guia'],
+                ':hauler_id' => $data['hauler_id'],
+                ':vehicle_id' => $data['vehicle_id'],
+                ':driver_id' => $data['driver_id'],
+                ':helper_id' => $data['helper_id'],
+                ':project_id' => $data['project_id'],
+                ':origin_id' => $data['origin_id'],
+                ':no_of_bales' => $data['no_of_bales'],
+                ':kilos' => $data['kilos'],
+                ':time_of_departure' => $data['time_departure'],
+                ':id' => $id
+            ]);
+
+            $arrival_date = date('Y-m-d', strtotime($data['arrival_time']));
+            $stmt = $this->conn->prepare("UPDATE arrival SET arrival_time = :arrival_time, arrival_date = :arrival_date WHERE transaction_id = :id");
+            $stmt->execute([
+                ':arrival_time' => $data['arrival_time'],
+                ':arrival_date' => $arrival_date,
+                ':id' => $id
+            ]);
+
+            $stmt = $this->conn->prepare("UPDATE queue SET transfer_in_line = :transfer_in_line, ordinal = :queue_ordinal, shift = :queue_shift, schedule = :queue_schedule, queue_number = :queue_number, priority = :queue_priority WHERE transaction_id = :id");
+            $stmt->execute([
+                ':transfer_in_line' => $data['transfer_in_line'],
+                ':queue_ordinal' => $data['queue_ordinal'],
+                ':queue_shift' => $data['queue_shift'],
+                ':queue_schedule' => $data['queue_schedule'],
+                ':queue_number' => $data['queue_number'],
+                ':queue_priority' => $data['queue_priority'],
+                ':id' => $id
+            ]);
+
+            $stmt = $this->conn->prepare("UPDATE unloading SET time_of_entry = :time_entry, unloading_time_start = :unloading_start, unloading_time_end = :unloading_end, time_of_departure = :departure, transfer_out_kilos = :transfer_out_kilos, scrap = :scrap, remarks = :remarks WHERE transaction_id = :id");
+            $stmt->execute([
+                ':time_entry' => $data['time_entry'],
+                ':unloading_start' => $data['unloading_start'],
+                ':unloading_end' => $data['unloading_end'],
+                ':departure' => $data['departure'],
+                ':transfer_out_kilos' => $data['transfer_out_kilos'],
+                ':scrap' => $data['scrap'],
+                ':remarks' => $data['remarks'],
+                ':id' => $id
+            ]);
+
+            $this->sendResponse(true, 'Transaction updated successfully');
+        } catch (PDOException $e) {
+            error_log('Database error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Error updating transaction');
         }
     }
 }
@@ -435,10 +621,18 @@ try {
             case 'create':
                 $transactionManager->createTransaction($_POST);
                 break;
+            case 'update':
+                $transaction_id = $_POST['transaction_id'] ?? null;
+                if ($transaction_id) {
+                    $transactionManager->updateTranasctionForm($_POST);
+                } else {
+                    $transactionManager->sendResponse(false, 'Missing transaction ID');
+                }
+                break;
             case 'cancel':
-                $id = $_POST['id'] ?? null;
-                if ($id) {
-                    $transactionManager->cancelTransaction($id);
+                $transaction_id = $_POST['transaction_id'] ?? null;
+                if ($transaction_id) {
+                    $transactionManager->cancelTransaction($_POST);
                 } else {
                     $transactionManager->sendResponse(false, 'Missing transaction ID');
                 }
@@ -471,6 +665,22 @@ try {
                 break;
             case 'list finished':
                 $transactionManager->getFinishedTransactions();
+                break;
+            case 'update transaction':
+                $transaction_id = $_POST['transaction_id'] ?? null;
+                if ($transaction_id) {
+                    $transactionManager->updateTransaction($transaction_id, $_POST);
+                } else {
+                    $transactionManager->sendResponse(false, 'Missing transaction ID');
+                }
+                break;
+            case 'update finished':
+                $transaction_id = $_POST['transaction_id'] ?? null;
+                if ($transaction_id) {
+                    $transactionManager->updateFinishedTransaction($transaction_id, $_POST);
+                } else {
+                    $transactionManager->sendResponse(false, 'Missing transaction ID');
+                }
                 break;
             default:
                 $transactionManager->sendResponse(false, 'Invalid action');

@@ -148,6 +148,26 @@ class queueManager
             $stmt->execute([
                 ':transaction_id' => $transaction_id
             ]);
+
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $created_by = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $to_reference = $stmt->fetchColumn();
+
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => $to_reference . ' Transaction added to queue by ' . $created_by . ' with transfer in line ' . $transfer_in_line . ', ordinal ' . $ordinal . ', shift ' . $shift . ', schedule ' . $schedule . ', queue number ' . $queue_number . ', and priority ' . $priority,
+                ':created_by' => $created_by
+            ]);
             $this->sendResponse(true, 'Transaction added to queue successfully');
         } catch (PDOException $e) {
             error_log('Error adding transaction to queue: ' . $e->getMessage());
@@ -185,6 +205,26 @@ class queueManager
                 ':priority' => $priority,
                 ':transaction_id' => $transaction_id,
             ]);
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $created_by = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $to_reference = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => $to_reference .
+                    ' Queue details updated by ' . $created_by,
+                ':created_by' => $created_by
+            ]);
+
             $this->sendResponse(true, 'Transaction updated to queue successfully');
         } catch (PDOException $e) {
             error_log('Error updating transaction to queue: ' . $e->getMessage());
@@ -215,6 +255,17 @@ class queueManager
             $stmt->execute([
                 ':transaction_id' => $transaction_id
             ]);
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $created_by = $stmt->fetchColumn();
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => ' Transaction moved to unloading by ' . $created_by,
+                ':created_by' => $created_by
+            ]);
             $this->sendResponse(true, 'Transaction moved to unloading successfully');
         } catch (PDOException $e) {
             error_log('Error moving transaction to unloading: ' . $e->getMessage());
@@ -224,6 +275,19 @@ class queueManager
     public function timeOfEntry($transaction_id, $time_of_entry)
     {
         try {
+            $stmt = $this->conn->prepare("SELECT arrival_time FROM arrival WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id
+            ]);
+
+            $arrival_time = $stmt->fetchColumn();
+            $arrivalTimeVerify = new DateTime($arrival_time);
+            $timeOfEntryVerify = new DateTime($time_of_entry);
+            if ($arrivalTimeVerify >= $timeOfEntryVerify) {
+                $this->sendResponse(false, "Time of entry must be after arrival time");
+                return;
+            }
+
             // Get time of departure
             $stmt = $this->conn->prepare("SELECT time_of_departure FROM transaction WHERE transaction_id = :transaction_id");
             $stmt->execute([
@@ -274,6 +338,21 @@ class queueManager
                 // Update transaction with time spent in waiting area and demurrage
                 $stmt = $this->conn->prepare("UPDATE transaction SET time_spent_waiting_area = ?, status = 'ongoing', demurrage = ? WHERE transaction_id = ?");
                 $stmt->execute([$hours, $totalDemurrage, $transaction_id]);
+
+                $stmt = $this->conn->prepare("SELECT created_by, to_reference FROM transaction WHERE transaction_id = :transaction_id");
+                $stmt->execute([
+                    ':transaction_id' => $transaction_id,
+                ]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $created_by = $row['created_by'];
+                $to_reference = $row['to_reference'];
+
+                $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+                $stmt->execute([
+                    ':transaction_id' => $transaction_id,
+                    ':details' => $to_reference . ' Transaction has been processed to enter by ' . $created_by,
+                    ':created_by' => $created_by
+                ]);
 
                 // Commit the transaction
                 $this->sendResponse(true, "<br>Transaction processed successfully");

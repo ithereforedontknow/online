@@ -5,7 +5,7 @@ include_once('../../includes/header/header-admin.php');
     <div class="container">
         <input type="text" class="form-control w-25 mb-3" name="search" id="search" placeholder="Search">
         <a href="api/export_manual.php" target="_blank" class="btn btn-primary" id="exportBtn">Export to PDF</a>
-        <!-- <img src="../assets/ULPI_BLUE (1).png" class="mx-auto d-block" alt="" style="width: 500px;"> -->
+        <img src="../../assets/img/ULPI_BLUE (1).png" class="mx-auto d-block" alt="" style="width: 500px;">
         <!-- <h1 class="mb-4 text-center">Inhouse Vehicle Management System User Manual</h1> -->
         <div id="manualContent" class="mt-5">
             <h2>1. User Management</h2>
@@ -217,6 +217,22 @@ include_once('../../includes/header/header-admin.php');
 <?php
 include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
+<script>
+    $(document).ready(function() {
+        $("#search").keyup(function() {
+            var searchText = $(this).val().toLowerCase();
+            $("#manualContent *").each(function() {
+                var content = $(this).text().toLowerCase();
+                if (content.indexOf(searchText) !== -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+    });
+</script>
 </body>
 
 </html>

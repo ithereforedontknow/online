@@ -104,14 +104,14 @@ include_once('../../includes/header/header-admin.php');
             <input type="hidden" id="edit-view-transaction-id" name="edit-view-transaction-id">
             <div class="form-floating mb-4">
                 <select class="form-select" id="edit-view-transfer-in-line" name="edit-view-transfer-in-line">
-                    <option value="1">Line 3</option>
-                    <option value="2">Line 4</option>
-                    <option value="3">Line 5</option>
-                    <option value="4">Line 6</option>
-                    <option value="5">Line 7</option>
-                    <option value="6">GLAD WHSE</option>
-                    <option value="7">WHSE 2-BAY 2</option>
-                    <option value="8">WHSE 2-BAY 3</option>
+                    <option value="Line 3">Line 3</option>
+                    <option value="Line 4">Line 4</option>
+                    <option value="Line 5">Line 5</option>
+                    <option value="Line 6">Line 6</option>
+                    <option value="Line 7">Line 7</option>
+                    <option value="GLAD WHSE">GLAD WHSE</option>
+                    <option value="WHSE 2-BAY 2">WHSE 2-BAY 2</option>
+                    <option value="WHSE 2-BAY 3">WHSE 2-BAY 3</option>
                 </select>
                 <label for="edit-view-transfer-in-line" class="form-label">Transfer in Line #</label>
             </div>

@@ -59,6 +59,7 @@ function login()
         $_SESSION['id'] = $user['id'];
         $_SESSION['userlevel'] = $user['userlevel'];
 
+
         // Determine redirect based on user level
         $redirects = [
             'admin' => './views/admin/index.php',

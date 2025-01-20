@@ -151,6 +151,7 @@ include_once('../../includes/header/header-branch.php');
                         <label for="add-time-departure" class="form-label">Time Of Departure</label>
                         <div class="invalid-feedback">Time of Departure cannot be in the past.</div>
                     </div>
+                    <input type="hidden" class="form-control" id="add-created_by" name="add-created_by" value="<?= $_SESSION['username']; ?>">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary float-end">Save</button>

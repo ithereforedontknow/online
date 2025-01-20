@@ -154,11 +154,33 @@ $("#add-branch-transaction").submit(async function (event) {
     }
 
     // Time validation
-    const departureTime = new Date($("#add-time-departure").val());
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (departureTime < yesterday) {
+
+    const departureDateTime = $("#add-time-departure").val();
+
+    function validateDateNotInPast(dateTime) {
+      if (!dateTime) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to midnight 12 am
+      const inputDate = new Date(dateTime);
+
+      // Ensure the input date is not before today
+      return inputDate >= today;
+    }
+    if (!validateDateNotInPast(departureDateTime)) {
       $("#add-time-departure").addClass("is-invalid");
+      if (!$("#add-time-departure").siblings(".invalid-feedback").length) {
+        $("#add-time-departure").after(
+          '<div class="invalid-feedback">Departure date must not be in the past</div>'
+        );
+      } else {
+        $("#add-time-departure")
+          .siblings(".invalid-feedback")
+          .text("Departure date must not be in the past");
+      }
+      return;
+    } else {
+      $("#add-time-departure").removeClass("is-invalid");
     }
 
     return errors;
@@ -183,7 +205,7 @@ $("#add-branch-transaction").submit(async function (event) {
   // Validate form
   const validationErrors = validateForm();
   if (validationErrors.length > 0) {
-    alert(validationErrors.join("\n"));
+    Swal.fire(validationErrors.join("\n"));
     return;
   }
 
@@ -201,6 +223,7 @@ $("#add-branch-transaction").submit(async function (event) {
     kilos: $("#add-kilos").val(),
     "origin-id": $("#add-origin_id").val(),
     "time-departure": $("#add-time-departure").val(),
+    created_by: $("#add-created_by").val(),
   };
 
   try {
@@ -221,7 +244,7 @@ $("#add-branch-transaction").submit(async function (event) {
         $("#add-branch-transaction")[0].reset();
       });
     } else {
-      alert("Error submitting transaction: " + response.message);
+      Swal.fire("Error submitting transaction: " + response.message);
     }
   } catch (error) {
     console.error("Error submitting transaction:", error);

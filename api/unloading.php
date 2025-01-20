@@ -92,6 +92,25 @@ class unloadingManager
                 ':time_of_departure' => $time_of_departure,
                 ':transaction_id' => $transaction_id
             ]);
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+
+            $created_by = $stmt->fetchColumn();
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+
+            $to_reference = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => $to_reference . ' Unloading details updated by ' . $created_by,
+                ':created_by' => $created_by
+            ]);
             $this->sendResponse(true, 'Unloading updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -101,9 +120,50 @@ class unloadingManager
     public function setDone($transaction_id)
     {
         try {
+            $sql = "SELECT * FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id WHERE transaction_id = :transaction_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute(['transaction_id' => $transaction_id]);
+            $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$transaction) {
+                $this->sendResponse(false, 'Transaction not found');
+                return;
+            }
+            $sql = "UPDATE vehicle SET status = '1' WHERE vehicle_id = :vehicle_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute(['vehicle_id' => $transaction['vehicle_id']]);
+
+            $sql = "UPDATE driver SET status = '1' WHERE driver_id = :driver_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute(['driver_id' => $transaction['driver_id']]);
+
+            $sql = "UPDATE helper SET status = '1' WHERE helper_id = :helper_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute(['helper_id' => $transaction['helper_id']]);
+
             $sql = "UPDATE transaction SET status = 'done' WHERE transaction_id = :transaction_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['transaction_id' => $transaction_id]);
+
+            $stmt = $this->conn->prepare("SELECT created_by FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+
+            $created_by = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+
+            $to_reference = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => $to_reference . ' Transaction marked as done by ' . $transaction['created_by'],
+                ':created_by' => $transaction['created_by']
+            ]);
             $this->sendResponse(true, 'Transaction marked as done');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());

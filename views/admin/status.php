@@ -13,7 +13,6 @@ include_once('../../includes/header/header-admin.php');
                 <option value="queue">Queue</option>
                 <option value="standby">Standby</option>
                 <option value="ongoing">Ongoing</option>
-                <option value="done">Done</option>
             </select>
         </div>
 

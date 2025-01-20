@@ -104,6 +104,20 @@ $("#edit-unloading-table-form").submit(async function (e) {
 function editUnloading(transaction) {
   $("#unloading-table-id").val(transaction.transaction_id);
   $("#unloading-table-time-entry").val(transaction.time_of_entry.slice(0, -3));
+  if (
+    !transaction.unloading_time_start ||
+    !transaction.unloading_time_end ||
+    !transaction.time_of_departure
+  ) {
+    Swal.fire({
+      title: "Error",
+      text: "Some required data is missing.",
+      icon: "error",
+      confirmButtonColor: "#1f3a69",
+      confirmButtonText: "OK",
+    });
+    return;
+  }
   $("#unloading-table-unloading-start").val(
     transaction.unloading_time_start.slice(0, -3)
   );

@@ -43,7 +43,7 @@ function openOffCanvas(offcanvasId) {
 function viewQueue(transaction) {
   $("#edit-view-transaction-id").val(transaction.transaction_id);
   $("#add-unloading-transaction-id").val(transaction.transaction_id);
-  $("#edit-queue-transfer-in-line").val(transaction.transfer_in_line);
+  $("#edit-view-transfer-in-line").val(transaction.transfer_in_line);
   $("#edit-view-queue-ordinal").val(transaction.ordinal);
   $("#edit-view-queue-shift").val(transaction.shift);
   $("#edit-view-queue-schedule").val(transaction.schedule);
@@ -299,6 +299,8 @@ $("#confirm-enter-queue-form").submit(async function (e) {
         icon: "error",
         title: "Error",
         text: response.message,
+        showConfirmButton: false,
+        timer: 1500,
       });
     }
   } catch (error) {
