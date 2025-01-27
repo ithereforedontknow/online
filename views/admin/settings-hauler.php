@@ -3,8 +3,22 @@ include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
     <div class="container">
-        <h1 class="display-5 fw-bold">Manage Hauler</h1>
-        <button class="btn btn-primary float-end mb-2 ms-2" data-bs-toggle="modal" data-bs-target="#addHaulerModal">
+        <div class="row mb-2">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="display-5 me-auto fw-bold mb-0">Manage Haulers</h1>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="settings.php">Home</a></li>
+                                <li class="breadcrumb-item"><a href="settings.php">Settings</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Haulers</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div> <button class="btn btn-primary float-end mb-2 ms-2" data-bs-toggle="modal" data-bs-target="#addHaulerModal">
             <i class="fa-solid fa-plus fa-lg me-2" style="color: #ffffff;"></i> New
         </button>
         <a href="settings.php" class="text-decoration-none" style="color:inherit">

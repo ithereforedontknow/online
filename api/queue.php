@@ -5,6 +5,7 @@ require '../config/connection.php';
 // Improved error handling and security
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
+date_default_timezone_set('Asia/Manila');
 
 class queueManager
 {
@@ -234,7 +235,7 @@ class queueManager
     public function getToEnter($status)
     {
         try {
-            $stmt = $this->conn->prepare("SELECT * FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.status = :status");
+            $stmt = $this->conn->prepare("SELECT * FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.status = :status || transaction.status = 'standby - sms sent'");
             $stmt->execute(['status' => $status]);
             $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $this->sendResponse(true, 'Transactions retrieved successfully', ['transactions' => $transactions]);
@@ -260,10 +261,16 @@ class queueManager
                 ':transaction_id' => $transaction_id,
             ]);
             $created_by = $stmt->fetchColumn();
+
+            $stmt = $this->conn->prepare("SELECT to_reference FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+            ]);
+            $to_reference = $stmt->fetchColumn();
             $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
-                ':details' => ' Transaction moved to unloading by ' . $created_by,
+                ':details' => $to_reference . ' Transaction moved to unloading by ' . $created_by,
                 ':created_by' => $created_by
             ]);
             $this->sendResponse(true, 'Transaction moved to unloading successfully');
@@ -283,8 +290,16 @@ class queueManager
             $arrival_time = $stmt->fetchColumn();
             $arrivalTimeVerify = new DateTime($arrival_time);
             $timeOfEntryVerify = new DateTime($time_of_entry);
+
             if ($arrivalTimeVerify >= $timeOfEntryVerify) {
                 $this->sendResponse(false, "Time of entry must be after arrival time");
+                return;
+            }
+
+            $current_time = date('Y-m-d H:i', time());
+
+            if ($timeOfEntryVerify > new DateTime($current_time)) {
+                $this->sendResponse(false, "Time of entry must be before current time");
                 return;
             }
 
@@ -364,6 +379,79 @@ class queueManager
             $this->sendResponse(false, 'Error processing transaction');
         }
     }
+    public function sendSMS($transaction_id, $force = false)
+    {
+        try {
+            // Fetch the transaction details
+            $stmt = "SELECT * FROM transaction WHERE transaction_id = :transaction_id";
+            $stmt = $this->conn->prepare($stmt);
+            $stmt->execute(['transaction_id' => $transaction_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Check if SMS was already sent and if the action is not forced
+            if ($row['status'] === 'standby - sms sent' && !$force) {
+                $this->sendResponse("false", "SMS already sent");
+                return;
+            }
+
+            // Update the transaction status if not already updated
+            if (!$force) {
+                $stmt = "UPDATE transaction SET status = 'standby - sms sent' WHERE transaction_id = :transaction_id";
+                $stmt = $this->conn->prepare($stmt);
+                $stmt->execute(['transaction_id' => $transaction_id]);
+            }
+
+            // Fetch driver and vehicle details
+            $stmt = "SELECT * FROM transaction 
+                 INNER JOIN driver ON transaction.driver_id = driver.driver_id 
+                 INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id 
+                 WHERE transaction_id = :transaction_id";
+            $stmt = $this->conn->prepare($stmt);
+            $stmt->execute(['transaction_id' => $transaction_id]);
+            $driver = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Log the SMS sending action
+            $stmt = "INSERT INTO transaction_log (transaction_id, details, created_by) 
+                 VALUES (:transaction_id, :details, :created_by)";
+            $stmt = $this->conn->prepare($stmt);
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':details' => 'SMS successfully sent to ' . $driver['driver_fname'] . ' ' . $driver['driver_lname'] . ' with truck plate number ' . $driver['plate_number'] . ' by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
+
+            // Send the SMS
+            $sendAttempt = 1;
+            $stmt = "SELECT send_attempt FROM sms_log WHERE transaction_id = :transaction_id AND recipient_number = :recipient_number";
+            $stmt = $this->conn->prepare($stmt);
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':recipient_number' => $driver['driver_phone']
+            ]);
+            $existingAttempt = $stmt->fetchColumn();
+
+            if ($existingAttempt !== false) {
+                $sendAttempt = $existingAttempt + 1;
+                $stmt = "UPDATE sms_log SET message_content = :message_content, send_attempt = :send_attempt WHERE transaction_id = :transaction_id AND recipient_number = :recipient_number";
+            } else {
+                $stmt = "INSERT INTO sms_log (transaction_id, recipient_number, message_content, send_attempt) VALUES (:transaction_id, :recipient_number, :message_content, :send_attempt)";
+            }
+
+            $stmt = $this->conn->prepare($stmt);
+            $message = "Hi " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ", your transaction has been processed. Please be on time.";
+            $stmt->execute([
+                ':transaction_id' => $transaction_id,
+                ':recipient_number' => $driver['driver_phone'],
+                ':message_content' => $message,
+                ':send_attempt' => $sendAttempt
+            ]);
+
+            $this->sendResponse("true", "SMS sent successfully", ['transaction' => $row]);
+        } catch (PDOException $e) {
+            error_log('Error sending SMS: ' . $e->getMessage());
+            $this->sendResponse(false, 'Error sending SMS');
+        }
+    }
 }
 
 // Main API Handler
@@ -436,6 +524,11 @@ try {
                 } else {
                     $queueManager->sendResponse(false, 'Missing transaction ID');
                 }
+                break;
+            case 'send sms':
+                $transaction_id = $_POST['transaction_id'];
+                $force = isset($_POST['force']) && $_POST['force'] === 'true';
+                $queueManager->sendSMS($transaction_id, $force);
                 break;
             default:
                 $queueManager->sendResponse(false, 'Invalid action');

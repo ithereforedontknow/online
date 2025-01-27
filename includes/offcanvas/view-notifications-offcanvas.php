@@ -1,35 +1,29 @@
-<div class="offcanvas offcanvas-end" tabindex="-1" id="viewNotificationsOffcanvas" aria-labelledby="viewNotificationsOffcanvas">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="viewNotificationsOffcanvas" aria-labelledby="viewNotificationsOffcanvasLabel">
     <div class="offcanvas-header border-bottom">
-        <h5 class="offcanvas-title" id="viewNotificationsOffcanvas">All <span class="fw-bold">Notifications</span></h5>
-
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
-        <?php
-        $stmt = $conn->prepare("SELECT transaction.transaction_id, transaction.to_reference, transaction.created_at, origin.origin_name 
-FROM transaction 
-RIGHT JOIN origin ON transaction.origin_id = origin.origin_id 
-WHERE transaction.created_at >= :currentTime AND status = 'departed' 
-ORDER BY transaction_id DESC");
-        $stmt->bindParam(':currentTime', $currentTime);
-        $stmt->execute();
-        if ($stmt->rowCount() > 0) {
-            while ($transaction = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        ?>
-                <div class="notification-item">
-                    <h5><i class="fas fa-truck notification-icon"></i><?= $transaction['to_reference'] ?> has departed from <?= $transaction['origin_name'] ?></h5>
-                    <small class="text-muted">Transaction ID: <?= $transaction['transaction_id'] ?></small>
-                    <small class="text-muted float-end"><?= date('F j, Y, g:i a', strtotime($transaction['created_at'])) ?></small>
+        <div class="d-flex">
+            <h5 class="offcanvas-title me-2" id="viewNotificationsOffcanvasLabel">
+                Notifications
+                <span class="text-muted small ms-2" id="notificationTotalCount"></span>
+            </h5>
+            <form id="notificationSearchForm" class="me-2">
+                <div class="input-group input-group-sm">
+                    <input
+                        type="search"
+                        id="notificationSearchInput"
+                        class="form-control"
+                        placeholder="Search notifications..."
+                        aria-label="Search notifications">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
-            <?php
-            }
-        } else {
-            ?>
-            <div class="alert alert-info" role="alert">
-                <i class="fas fa-info-circle mr-2"></i> No notifications at this time.
-            </div>
-        <?php
-        }
-        ?>
+            </form>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+    </div>
+    <div class="offcanvas-body p-3">
+        <div id="notificationList" class="list-group list-group-flush">
+            <!-- Notifications will be dynamically loaded here -->
+        </div>
     </div>
 </div>

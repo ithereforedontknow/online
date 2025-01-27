@@ -9,7 +9,58 @@ html,
 body {
   height: 100%;
 }
+.btn-secondary.disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+/* Breadcrumb Styling */
+.breadcrumb {
+  font-size: 0.875rem;
+}
 
+.breadcrumb-item a {
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+  color: #0d6efd;
+}
+/* Table Styling */
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.825rem;
+  letter-spacing: 0.025em;
+  padding: 1rem;
+}
+
+.table td {
+  font-size: 0.875rem;
+  padding: 1rem;
+  vertical-align: middle;
+}
+/* Card Hover Effect */
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* Custom Background */
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+/* Table Header */
+.table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+}
 .form-signin {
   max-width: 330px;
   padding: 1rem;

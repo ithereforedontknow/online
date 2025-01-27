@@ -83,6 +83,19 @@ class unloadingManager
             $unloading_time_start = $data['unloading_time_start'];
             $unloading_time_end = $data['unloading_time_end'];
             $time_of_departure = $data['time_of_departure'];
+
+            if ($unloading_time_start < $time_of_entry) {
+                $this->sendResponse(false, 'Unloading time start cannot be before time of entry');
+                return;
+            }
+            if ($unloading_time_end < $unloading_time_start) {
+                $this->sendResponse(false, 'Unloading time end cannot be before unloading time start');
+                return;
+            }
+            if ($time_of_departure < $unloading_time_end) {
+                $this->sendResponse(false, 'Time of departure cannot be before unloading time end');
+                return;
+            }
             $sql = "UPDATE unloading SET time_of_entry = :time_of_entry, unloading_time_start = :unloading_time_start, unloading_time_end = :unloading_time_end, time_of_departure = :time_of_departure WHERE transaction_id = :transaction_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([

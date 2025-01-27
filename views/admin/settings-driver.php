@@ -3,8 +3,18 @@ include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
     <div class="container">
-        <h1 class="display-5 fw-bold">Manage Driver & Helper</h1>
-        <a href="settings.php" class="text-decoration-none " style="color:inherit">
+        <div class="d-flex justify-content-between align-items-center mb-">
+            <div>
+                <h1 class="display-5 me-auto fw-bold mb-0">Manage Drivers & Helpers</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="settings.php">Home</a></li>
+                        <li class="breadcrumb-item"><a href="settings.php">Settings</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Drivers & Helpers</li>
+                    </ol>
+                </nav>
+            </div>
+        </div> <a href="settings.php" class="text-decoration-none " style="color:inherit">
             <button class="btn btn-primary mb-2">
                 <i class="fa-solid fa-arrow-left fa-lg me-2" style="color: #ffffff;"></i> Back
             </button>

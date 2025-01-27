@@ -94,12 +94,22 @@ $("#edit-unloading-table-form").submit(async function (e) {
     unloading_time_end,
     time_of_departure,
   });
-  response.then((response) => {
-    if (response.success) {
-      refreshUnloadingList();
-      $("#editUnloadingOffCanvas").offcanvas("hide");
-    }
-  });
+  response
+    .then((response) => {
+      if (response.success) {
+        refreshUnloadingList();
+        $("#editUnloadingModal").modal("hide");
+      }
+    })
+    .catch((error) => {
+      Swal.fire({
+        title: "Error",
+        text: error,
+        icon: "error",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    });
 });
 function editUnloading(transaction) {
   $("#unloading-table-id").val(transaction.transaction_id);
@@ -127,7 +137,7 @@ function editUnloading(transaction) {
   $("#unloading-table-departure").val(
     transaction.time_of_departure.slice(0, -3)
   );
-  $("#editUnloadingOffCanvas").offcanvas("show");
+  $("#editUnloadingModal").modal("show");
 }
 async function refreshUnloadingList() {
   try {
@@ -183,9 +193,9 @@ async function refreshUnloadingList() {
             hour: "2-digit",
             minute: "2-digit",
           })}`
-        : `<button type="button" class="btn btn-primary" ${
-            transaction.unloading_time_start ? "" : "disabled "
-          }onclick="setUnloadingTimeEnd(${
+        : `<button type="button" class="btn btn-primary ${
+            transaction.unloading_time_start ? "" : "btn-secondary disabled"
+          }" onclick="setUnloadingTimeEnd(${
             transaction.transaction_id
           })">Set Time</button>`
     }
@@ -200,27 +210,25 @@ async function refreshUnloadingList() {
             hour: "2-digit",
             minute: "2-digit",
           })}`
-        : `<button type="button" class="btn btn-primary" ${
-            transaction.unloading_time_end ? "" : "disabled "
-          }onclick="setTimeOfDeparture(${
+        : `<button type="button" class="btn btn-primary ${
+            transaction.unloading_time_end ? "" : "btn-secondary disabled"
+          }" onclick="setTimeOfDeparture(${
             transaction.transaction_id
           })">Set Time</button>`
     }
   </td>
-  <td class="text-center">&#8369; ${parseFloat(transaction.demurrage).toFixed(
-    2
-  )}</td>
+  
   <td class="text-center">
     <button class="btn btn-primary me-2" onclick='editUnloading(${JSON.stringify(
       transaction
     )})'>Edit</button>
-    <button class="btn btn-primary" ${
+    <button type="button" class="btn btn-primary ${
       transaction.unloading_time_start &&
       transaction.unloading_time_end &&
       transaction.time_of_departure
         ? ""
-        : "disabled "
-    }onclick='setDone(${transaction.transaction_id})'>Set Done</button>
+        : "btn-secondary disabled"
+    }" onclick='setDone(${transaction.transaction_id})'>Done</button>
   </td>
 </tr>
 
@@ -232,6 +240,7 @@ async function refreshUnloadingList() {
       $("#unloading-table").DataTable({
         responsive: true,
         lengthChange: false,
+        ordering: false,
       });
     } else {
       showError(response.message || "Unable to fetch unloading transactions.");

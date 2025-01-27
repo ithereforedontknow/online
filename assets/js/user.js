@@ -130,11 +130,15 @@ async function refreshUserList() {
           ? response.users
               .map(
                 (user) => `<tr>
-                              <td>${user.id}</td>
-                              <td>${user.fname} ${user.lname}</td>
-                              <td>${user.username}</td>
-                              <td>${user.userlevel || "N/A"}</td>
-                              <td>
+                              <td class='text-center'>${user.id}</td>
+                              <td class='text-center'>${user.fname} ${
+                  user.lname
+                }</td>
+                              <td class='text-center'>${user.username}</td>
+                              <td class='text-center'>${
+                                user.userlevel || "N/A"
+                              }</td>
+                              <td class='text-center'>
                                 <button id='${
                                   user.status === 1
                                     ? `deactivate-btn-${user.id}`
@@ -153,7 +157,7 @@ async function refreshUserList() {
                                   }
                                 </button>
                               </td>
-                              <td>
+                              <td class='text-center'>
                                   <button onclick='openEditUserOffcanvas(${JSON.stringify(
                                     user
                                   )})' class="btn btn-primary">Edit</button>

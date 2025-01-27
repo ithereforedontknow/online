@@ -3,8 +3,20 @@ include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
     <div class="container">
-        <h1 class="display-5 fw-bold">Manage Vehicle</h1>
-        <button class="btn btn-primary float-end mb-2 ms-2" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
+        <div class="col-12 mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5 me-auto fw-bold mb-0">Manage Vehicles</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="settings.php">Home</a></li>
+                            <li class="breadcrumb-item"><a href="settings.php">Settings</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Vehicles</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div> <button class="btn btn-primary float-end mb-2 ms-2" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
             <i class="fa-solid fa-plus fa-lg me-2" style="color: #ffffff;"></i> New
         </button>
         <a href="settings.php" class="text-decoration-none" style="color:inherit">
@@ -59,7 +71,7 @@ include_once('../../includes/header/header-admin.php');
 
                     </div>
                     <div class="form-floating">
-                        <select name="truck-type" id="truck-type" class="form-select" onchange="showOthersType()" required>
+                        <select name="truck-type" id="add-truck-type" class="form-select" onchange="showOthersType()" required>
                             <option value="Trailer">Trailer</option>
                             <option value="Ten Wheeler">Ten Wheeler</option>
                             <option value="Forward">Forward</option>

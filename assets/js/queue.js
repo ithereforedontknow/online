@@ -49,10 +49,23 @@ function viewQueue(transaction) {
   $("#edit-view-queue-schedule").val(transaction.schedule);
   $("#edit-view-queue-number").val(transaction.queue_number);
   $("#edit-view-queue-priority").val(transaction.priority);
-  $("#viewQueueOffCanvas").offcanvas("show");
+  $("#viewQueueModal").modal("show");
 }
 function enterQueue(transaction_id) {
   $("#enterQueueModal").modal("show");
+  const now = new Date();
+  const formattedDateTime =
+    now.getFullYear() +
+    "-" +
+    (now.getMonth() + 1).toString().padStart(2, "0") +
+    "-" +
+    now.getDate().toString().padStart(2, "0") +
+    "T" +
+    now.getHours().toString().padStart(2, "0") +
+    ":" +
+    now.getMinutes().toString().padStart(2, "0");
+
+  $("#confirm-enter-queue-time").val(formattedDateTime);
   $("#confirm-enter-queue-transaction-id").val(transaction_id);
 }
 function applyFilters() {
@@ -89,6 +102,47 @@ $("#ordinalFilter, #shiftFilter, #scheduleFilter, #lineFilter").on(
   "change",
   applyFilters
 );
+async function sendSms(transaction_id, force = false) {
+  try {
+    const response = await $.ajax({
+      url: "../../api/queue.php",
+      method: "POST",
+      data: {
+        action: "send sms",
+        transaction_id: transaction_id,
+        force: force ? "true" : "false", // Add force parameter
+      },
+      dataType: "json",
+    });
+
+    if (response.message === "SMS already sent" && !force) {
+      Swal.fire({
+        title: "SMS Already Sent",
+        text: "Do you want to re-send the SMS?",
+        icon: "info",
+        showConfirmButton: true,
+        confirmButtonText: "Yes",
+        confirmButtonColor: "#1f3a69",
+        showCancelButton: true,
+        cancelButtonText: "No",
+        cancelButtonColor: "#5c636a",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          sendSms(transaction_id, true); // Call sendSms again with force set to true
+        }
+      });
+    } else if (response.success) {
+      Swal.fire({
+        title: "SMS Sent Successfully",
+        icon: "success",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    }
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+  }
+}
 
 // Refresh the queue list and reapply filters
 async function refreshQueueList() {
@@ -155,10 +209,13 @@ async function refreshToEnterList() {
     const response = await $.ajax({
       url: "../../api/queue.php",
       method: "POST",
-      data: { action: "list to enter", status: "standby" },
+      data: {
+        action: "list to enter",
+        status: "standby",
+      },
       dataType: "json",
     });
-
+    console.log(response);
     if (response.success) {
       const toEnterList = $("#to-enter-list");
       // Destroy the existing DataTable instance if it exists
@@ -176,13 +233,14 @@ async function refreshToEnterList() {
             // Create a unique ID for the timer element
             const timerId = `timer-${transactionId}`;
             // Return the row HTML
-            return `<tr onclick="enterQueue(${transaction.transaction_id})"
+            return `<tr"
                       style="cursor: pointer;">
                         <td class="text-center">${transaction.plate_number}</td>
                         <td class="text-center" id="${timerId}">
-                          Loading...
+                        Loading...
                         </td>
-                        <td class="text-center" scope="row"><i class="fa-solid fa-arrow-right"></i></td>
+                        <td class="text-center"><button class="btn btn-primary" onclick="sendSms(${transaction.transaction_id})"><i class="fa-solid fa-sms"></i></button></td>
+                        <td class="text-center" scope="row"><button type="button" class="btn btn-primary" onclick="enterQueue(${transaction.transaction_id})">Set</button></td>
                       </tr>`;
           })
           .join("")
@@ -205,10 +263,15 @@ async function refreshToEnterList() {
           const currentTime = new Date();
           const elapsedTime = new Date(currentTime - arrivalTime);
           const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
-          const seconds = Math.floor((elapsedTime / 1000) % 60);
+          const minutes = Math.floor(
+            (elapsedTime % (1000 * 60 * 60)) / (1000 * 60)
+          );
+          const seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
 
           // Update the timer element with the new values
-          $(`#${timerId}`).text(`${hours} hours and ${seconds} seconds`);
+          $(`#${timerId}`).text(
+            `${hours} hour(s), ${minutes} minutes, and ${seconds} seconds`
+          );
         }, 1000); // Update every second
       });
     } else {
@@ -242,7 +305,7 @@ $("#edit-queue-form").submit(async function (e) {
     });
 
     if (response.success) {
-      $("#viewQueueOffCanvas").offcanvas("hide");
+      $("#viewQueueModal").modal("hide");
       refreshQueueList();
     } else {
       $("#edit-view-queue-number").addClass("is-invalid");
@@ -269,7 +332,7 @@ $("#add-unloading-form").submit(async function (e) {
     if (response.success) {
       refreshQueueList();
       refreshToEnterList();
-      $("#viewQueueOffCanvas").offcanvas("hide");
+      $("#viewQueueModal").modal("hide");
     } else {
       console.error("Transaction unloading failed:", response.message);
     }

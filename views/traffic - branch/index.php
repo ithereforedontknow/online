@@ -65,7 +65,7 @@ include_once('../../includes/header/header-branch.php');
                     </div>
                     <div class="form-floating mb-4">
                         <input list="add-plate-numbers" class="form-control" name="add-plate-number" id="add-plate-number" required autocomplete="off">
-                        <label for="add-plate-numbers">Plate Number</label>
+                        <label for="add-plate-numbers">Plate Number and Truck Type</label>
                         <datalist id="add-plate-numbers">
                             <?php
                             $stmt = $conn->prepare("SELECT * FROM vehicle INNER JOIN hauler on vehicle.hauler_id = hauler.hauler_id WHERE hauler.branch = :branch AND vehicle.status = '1'");

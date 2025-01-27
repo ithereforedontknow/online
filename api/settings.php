@@ -58,6 +58,11 @@ class settingsManager
                 'branch' => $branch,
                 'address' => $address
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('hauler', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $name . ' Hauler added by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Hauler added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -89,6 +94,12 @@ class settingsManager
                 'id' => $id
             ]);
 
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('hauler', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $name . ' Hauler updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
+
             $this->sendResponse(true, 'Hauler updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -109,6 +120,11 @@ class settingsManager
             $stmt->execute([
                 'status' => $status,
                 'id' => $id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('hauler', :details, :created_by)");
+            $stmt->execute([
+                ':details' => 'Hauler status updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
             ]);
             $this->sendResponse(true, 'Hauler status updated successfully');
         } catch (Exception $e) {
@@ -148,6 +164,11 @@ class settingsManager
                 'truck_type' => $truck_type,
                 'hauler_id' => $hauler_id
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('vehicle', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $plate_number . ' Vehicle added by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Vehicle added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -175,6 +196,11 @@ class settingsManager
                 'truck_type' => $truck_type,
                 'hauler_id' => $hauler_id,
                 'id' => $id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('vehicle', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $plate_number . ' Vehicle updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
             ]);
             $this->sendResponse(true, 'Vehicle updated successfully');
         } catch (Exception $e) {
@@ -241,6 +267,11 @@ class settingsManager
                 'driver_lname' => $driver_lname,
                 'driver_phone' => $driver_phone
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('driver', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $driver_fname . ' Driver added by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Driver added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -282,6 +313,11 @@ class settingsManager
                 'driver_phone' => $driver_phone,
                 'driver_id' => $driver_id
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('driver', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $driver_fname . ' Driver updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Driver updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -320,6 +356,11 @@ class settingsManager
                 'helper_mname' => $helper_mname,
                 'helper_lname' => $helper_lname,
                 'helper_phone' => $helper_phone
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('helper', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $helper_fname . ' Helper added by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
             ]);
             $this->sendResponse(true, 'Helper added successfully');
         } catch (Exception $e) {
@@ -362,6 +403,11 @@ class settingsManager
                 'helper_phone' => $helper_phone,
                 'helper_id' => $helper_id
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('helper', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $helper_fname . ' Helper updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Helper updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -399,6 +445,11 @@ class settingsManager
                 'project_name' => $project_name,
                 'project_description' => $project_description
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('project', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $project_name . ' Project added by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Project added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -424,6 +475,11 @@ class settingsManager
                 'project_name' => $project_name,
                 'project_description' => $project_description,
                 'project_id' => $project_id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('project', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $project_name . ' Project updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
             ]);
             $this->sendResponse(true, 'Project updated successfully');
         } catch (Exception $e) {
@@ -462,6 +518,11 @@ class settingsManager
                 'origin_name' => $origin_name,
                 'origin_code' => $origin_code
             ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('origin', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $origin_name . ' Origin added by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
             $this->sendResponse(true, 'Origin added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -487,6 +548,11 @@ class settingsManager
                 'origin_name' => $origin_name,
                 'origin_code' => $origin_code,
                 'origin_id' => $origin_id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('origin', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $origin_name . ' Origin updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
             ]);
             $this->sendResponse(true, 'Origin updated successfully');
         } catch (Exception $e) {
@@ -514,6 +580,11 @@ class settingsManager
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 'demurrage' => $demurrage
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('demurrage', :details, :created_by)");
+            $stmt->execute([
+                ':details' => $demurrage . ' pesos' . ' Demurrage updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
             ]);
             $this->sendResponse(true, 'Demurrage updated successfully');
         } catch (Exception $e) {

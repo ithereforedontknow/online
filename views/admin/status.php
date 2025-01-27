@@ -3,17 +3,29 @@ include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
     <div class="container">
-        <!-- Page Title -->
-        <div class="d-flex align-items-center mb-4">
-            <h1 class="display-5 me-auto fw-bold mb-0">Transaction Status</h1>
-            <select id="statusFilter" class="form-select w-25">
-                <option value="">All</option>
-                <option value="departed">Departed</option>
-                <option value="arrived">Arrived</option>
-                <option value="queue">Queue</option>
-                <option value="standby">Standby</option>
-                <option value="ongoing">Ongoing</option>
-            </select>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="display-5 me-auto fw-bold mb-0">Transaction In Progress</h1>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Status</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <select id="statusFilter" class="form-select w-25">
+                        <option value="">All</option>
+                        <option value="departed">Departed</option>
+                        <option value="arrived">Arrived</option>
+                        <option value="queue">Queue</option>
+                        <option value="standby">Standby</option>
+                        <option value="ongoing">Ongoing</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- Transaction Progress Section -->

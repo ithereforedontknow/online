@@ -27,6 +27,9 @@ const transactionManager = {
   async cancelTransaction(data) {
     return this.request("cancel", data);
   },
+  async divertTransaction(data) {
+    return this.request("divert", data);
+  },
   async updateFinishedTransaction(data) {
     return this.request("update finished", data);
   },
@@ -74,6 +77,7 @@ function openOffCanvas(offcanvasId) {
     console.error(`Offcanvas with ID ${offcanvasId} not found.`);
   }
 }
+
 function editTransaction(transaction) {
   document.querySelector("#edit-transaction-id-new").value =
     transaction.transaction_id;
@@ -85,7 +89,7 @@ function editTransaction(transaction) {
   document.querySelector("#edit-origin").value = transaction.origin_id;
   document.querySelector("#edit-time-departure").value =
     transaction.time_of_departure;
-  openOffCanvas("#editTransactionOffcanvas");
+  $("#editTransactionModal").modal("show");
 }
 
 $("#add-transaction").submit(async function (e) {
@@ -247,9 +251,16 @@ $("#add-transaction").submit(async function (e) {
 
   try {
     await transactionManager.createTransaction(data);
-    $("#addTransactionOffcanvas").offcanvas("hide");
+    $("#addTransactionModal").modal("hide");
   } catch (error) {
-    $("#to-reference").addClass("is-invalid");
+    console.log(data);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error,
+      showConfirmButton: false,
+      timer: 1500,
+    });
     console.error("Transaction creation failed:", error);
     // Optionally, show an error message to the user
   }
@@ -357,7 +368,7 @@ $("#edit-transaction-actual-form").submit(async function (e) {
 
   try {
     await transactionManager.updateTransaction(data);
-    $("#editTransactionOffcanvas").offcanvas("hide");
+    $("#editTransactionModal").modal("hide");
   } catch (error) {
     Swal.fire({
       icon: "error",
@@ -371,18 +382,23 @@ $("#edit-transaction-actual-form").submit(async function (e) {
 });
 
 function cancelTransaction(transaction) {
+  console.log(transaction);
+
   const data = {
     transaction_id: transaction.transaction_id,
     created_by: transaction.created_by,
+    vehicle_id: transaction.vehicle_id,
+    driver_id: transaction.driver_id,
+    helper_id: transaction.helper_id,
   };
   Swal.fire({
     title: "Are you sure?",
     text: "Confirm canceling this transaction",
     icon: "warning",
     showCancelButton: true,
+    confirmButtonText: "Yes, cancel it!",
     confirmButtonColor: "#1f3a69",
     cancelButtonColor: "#5c636a",
-    confirmButtonText: "Yes, cancel it!",
   }).then((result) => {
     if (result.isConfirmed) {
       transactionManager
@@ -399,18 +415,26 @@ function cancelTransaction(transaction) {
 }
 function cancelArrivedTransaction(transaction) {
   console.log(transaction);
+
   const data = {
     transaction_id: transaction.transaction_id,
+    to_reference: transaction.to_reference,
     created_by: transaction.created_by,
+    vehicle_id: transaction.vehicle_id,
+    driver_id: transaction.driver_id,
+    helper_id: transaction.helper_id,
   };
   Swal.fire({
     title: "Are you sure?",
     text: "Confirm canceling this transaction",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#1f3a69",
-    cancelButtonColor: "#5c636a",
+    showDenyButton: true,
     confirmButtonText: "Yes, cancel it!",
+    denyButtonText: "Divert to other location",
+    confirmButtonColor: "#1f3a69",
+    denyButtonColor: "#5c636a",
+    cancelButtonColor: "#5c636a",
   }).then((result) => {
     if (result.isConfirmed) {
       transactionManager
@@ -422,6 +446,10 @@ function cancelArrivedTransaction(transaction) {
           console.error("Transaction cancellation failed:", error);
           // Optionally, show an error message to the user
         });
+    } else if (result.isDenied) {
+      $("#divert-transaction-transaction-id").val(transaction.transaction_id);
+      $("#divert-transaction-to-reference").val(transaction.to_reference);
+      $("#divertTransactionModal").modal("show");
     }
   });
 }
@@ -486,7 +514,7 @@ function editFinishedtransactions(transaction) {
   $("#finished-transfer-out-kilos").val(transaction.transfer_out_kilos);
   $("#finished-scrap").val(transaction.scrap);
   $("#finished-remarks").val(transaction.remarks);
-  $("#editFinishedTransactionOffcanvas").offcanvas("show");
+  $("#editFinishedTransactionModal").modal("show");
 }
 // Modified event handler
 $(document).on("submit", ".arrival-transaction-form", async function (event) {
@@ -550,6 +578,119 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
     });
   }
 });
+
+$("#divert-transaction-form").submit(async function (e) {
+  e.preventDefault();
+  Swal.fire({
+    title: "Are you sure?",
+    text: "You won't be able to revert this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#1f3a69",
+    cancelButtonColor: "#5c636a",
+    confirmButtonText: "Yes, divert it!",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Swal.fire({
+        title: "Set Status",
+        text: "Make Drivers, Helpers, and Vehicle Available",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#1f3a69",
+        cancelButtonColor: "#5c636a",
+        confirmButtonText: "Yes",
+        denyButtonText: "No",
+        showDenyButton: true,
+        denyButtonColor: "#5c636a",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const data = {
+            action: "divert",
+            transaction_id: $("#divert-transaction-transaction-id").val(),
+            to_reference: $("#divert-transaction-to-reference").val(),
+            origin_id: $("#divert-transaction-branch").val(),
+            remarks: $("#divert-transaction-remarks").val(),
+            set_available: true,
+          };
+          try {
+            const response = $.ajax({
+              url: "../../api/transaction.php",
+              method: "POST",
+              data: data,
+              dataType: "json",
+            });
+            if (response.success) {
+              refreshArrivedList();
+              $("#divertTransactionOffcanvas").offcanvas("hide");
+              Swal.fire({
+                title: "Updated!",
+                text: "Transaction diverted to another branch.",
+                icon: "success",
+                showConfirmButton: true,
+                confirmButtonText: "Print transaction form",
+                confirmButtonColor: "#1f3a69",
+                showCancelButton: true,
+                cancelButtonText: "No",
+                cancelButtonColor: "#5c636a",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  $("#divertTransactionModal").modal("hide");
+                  printTransaction(data.transaction_id);
+                }
+              });
+            } else {
+              console.error("Transaction diversion failed:", response.data);
+            }
+          } catch (error) {
+            console.error("Transaction diversion failed:", error);
+          }
+        } else if (result.isDenied) {
+          const data = {
+            action: "divert",
+            transaction_id: $("#divert-transaction-transaction-id").val(),
+            to_reference: $("#divert-transaction-to-reference").val(),
+            origin_id: $("#divert-transaction-branch").val(),
+            remarks: $("#divert-transaction-remarks").val(),
+            set_available: false,
+          };
+          try {
+            const response = $.ajax({
+              url: "../../api/transaction.php",
+              method: "POST",
+              data: data,
+              dataType: "json",
+            });
+            if (response.success) {
+              refreshArrivedList();
+              $("#divertTransactionOffcanvas").offcanvas("hide");
+              Swal.fire({
+                title: "Updated!",
+                text: "Transaction diverted to another branch.",
+                icon: "success",
+                showConfirmButton: true,
+                confirmButtonText: "Print transaction form",
+                confirmButtonColor: "#1f3a69",
+                showCancelButton: true,
+                cancelButtonText: "No",
+                cancelButtonColor: "#5c636a",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  $("#divertTransactionModal").modal("hide");
+                  printTransaction(data.transaction_id);
+                }
+              });
+            } else {
+              console.error("Transaction diversion failed:", response.data);
+            }
+          } catch (error) {
+            console.error("Transaction diversion failed:", error);
+          }
+        }
+      });
+    }
+  });
+});
+
 $("#finished-transaction-form").submit(async function (e) {
   e.preventDefault();
 
@@ -716,7 +857,7 @@ $("#finished-transaction-form").submit(async function (e) {
     // Assuming you have a transactionManager with a method to handle finished transactions
     await transactionManager.updateFinishedTransaction(data);
     // Hide the form modal/offcanvas if needed
-    $("#editFinishedTransactionOffcanvas").offcanvas("hide");
+    $("#editFinishedTransactionModal").modal("hide");
     refreshFinishedTransactions();
   } catch (error) {
     console.error("Finished transaction creation failed:", error);
@@ -745,7 +886,6 @@ async function refreshDepartedList() {
           (transaction) => `
           <tr>
             <td class="text-center">${transaction.to_reference}</td>
-            <td class="text-center">${transaction.guia}</td>
             <td class="text-center">${transaction.hauler_name}</td>
             <td class="text-center">${transaction.plate_number}</td>
             <td class="text-center">${transaction.project_name}</td>
@@ -765,7 +905,7 @@ async function refreshDepartedList() {
               )})'>Edit</button>
               <button type="button" class="btn btn-secondary ms-2" onclick='cancelTransaction(${JSON.stringify(
                 transaction
-              )})'>Cancel</button>
+              )})'><i class="fa-solid fa-cancel"></i></button>
             </td>
           </tr>
         `
@@ -860,7 +1000,6 @@ async function refreshArrivedList() {
           (transaction) => `
           <tr>
             <td class="text-center">${transaction.to_reference}</td>
-            <td class="text-center">${transaction.guia}</td>
             <td class="text-center">${transaction.hauler_name}</td>
             <td class="text-center">${transaction.plate_number}</td>
             <td class="text-center">${transaction.project_name}</td>
@@ -872,7 +1011,7 @@ async function refreshArrivedList() {
               })">Queue</button>
               <button type="button" class="btn btn-secondary ms-2" onclick='cancelArrivedTransaction(${JSON.stringify(
                 transaction
-              )})'>Cancel</button>
+              )})'><i class="fa-solid fa-cancel"></i></button>
               <button type="button" class="btn btn-secondary ms-2" onclick="printTransaction(${
                 transaction.transaction_id
               })"><i class="fa-solid fa-print"></i></button>
@@ -1067,7 +1206,7 @@ refreshTransactionStatus();
 function queueTransaction(transactionId) {
   // open addQueueOffcanvas
   $("#add-queue-transaction-id").val(transactionId);
-  $("#addQueueOffcanvas").offcanvas("show");
+  $("#addQueueModal").modal("show");
 }
 $("#add-queue-transaction").submit(async function (e) {
   e.preventDefault();
@@ -1091,7 +1230,7 @@ $("#add-queue-transaction").submit(async function (e) {
     });
     if (response.success) {
       refreshArrivedList();
-      $("#addQueueOffcanvas").offcanvas("hide");
+      $("#addQueueModal").modal("hide");
     } else {
       $("#add-queue-number").addClass("is-invalid");
       console.error("Error queueing transaction:", response.message);
@@ -1123,7 +1262,11 @@ async function refreshFinishedTransactions() {
         .map(
           (transaction) => `
           <tr>
-            <td class="text-center">${transaction.to_reference}</td>
+            <td class="text-center">${
+              transaction.to_reference
+            }</td><td class="text-center">&#8369; ${parseFloat(
+            transaction.demurrage
+          ).toFixed(2)}</td>
             <td class="text-center">${transaction.kilos}</td>
             <td class="text-center">
               ${
@@ -1196,6 +1339,7 @@ async function refreshFinishedTransactions() {
       $("#finished-transactions-table").DataTable({
         responsive: true,
         lengthChange: false,
+        ordering: false,
       });
 
       // Attach submit handler to dynamically created forms
@@ -1228,6 +1372,8 @@ async function refreshFinishedTransactions() {
                   title: "Error!",
                   text: response.message || "Failed to update transaction.",
                   icon: "error",
+                  showConfirmButton: false,
+                  timer: 1500,
                 });
               }
             },
