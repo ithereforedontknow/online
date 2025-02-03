@@ -137,6 +137,18 @@ async function sendSms(transaction_id, force = false) {
         icon: "success",
         showConfirmButton: false,
         timer: 1500,
+        didClose: () => {
+          refreshToEnterList();
+          console.log(response);
+        },
+      });
+    } else {
+      Swal.fire({
+        title: "Error",
+        text: response.data || "Failed to send SMS",
+        icon: "error",
+        showConfirmButton: false,
+        timer: 1500,
       });
     }
   } catch (error) {
@@ -228,7 +240,7 @@ async function refreshToEnterList() {
         response.data.transactions
           .map((transaction) => {
             const arrivalTime = new Date(transaction.arrival_time);
-            const transactionId = transaction.id; // Assuming each transaction has a unique ID
+            const transactionId = transaction.transaction_id; // Assuming each transaction has a unique ID
 
             // Create a unique ID for the timer element
             const timerId = `timer-${transactionId}`;
@@ -239,9 +251,19 @@ async function refreshToEnterList() {
                         <td class="text-center" id="${timerId}">
                         Loading...
                         </td>
-                        <td class="text-center"><button class="btn btn-primary" onclick="sendSms(${transaction.transaction_id})"><i class="fa-solid fa-sms"></i></button></td>
-                        <td class="text-center" scope="row"><button type="button" class="btn btn-primary" onclick="enterQueue(${transaction.transaction_id})">Set</button></td>
-                      </tr>`;
+                        <td class="text-center"><button class="btn btn-primary" onclick="sendSms(${
+                          transaction.transaction_id
+                        })"><i class="fa-solid fa-sms"></i></button></td>
+                        <td class="text-center" scope="row"><button type="button" class="btn ${
+                          transaction.status === "standby - sms sent"
+                            ? "btn-primary"
+                            : "btn-secondary"
+                        }" onclick="enterQueue(${
+              transaction.transaction_id
+            })" ${
+              transaction.status === "standby - sms sent" ? "" : "disabled"
+            }>Set</button></td>
+                      </tr>";`;
           })
           .join("")
       );
@@ -257,7 +279,7 @@ async function refreshToEnterList() {
       // Start the real-time counters for each transaction
       response.data.transactions.forEach((transaction) => {
         const arrivalTime = new Date(transaction.arrival_time);
-        const timerId = `timer-${transaction.id}`;
+        const timerId = `timer-${transaction.transaction_id}`;
 
         setInterval(() => {
           const currentTime = new Date();

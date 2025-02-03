@@ -30,6 +30,7 @@ include_once('../../includes/header/header-admin.php');
                 <th class="text-center" scope="col">Hauler</th>
                 <th class="text-center" scope="col">Plate Number</th>
                 <th class="text-center" scope="col">Truck Type</th>
+                <th class="text-center" scope="col">Status</th>
                 <th class="text-center" scope="col">...</th>
             </thead>
             <tbody id="vehicle-list">

@@ -2,7 +2,7 @@
 include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
-    <div class="container">
+    <div class="container-fluid">
 
         <div class="row mb-4">
             <div class="col-12">

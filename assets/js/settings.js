@@ -13,116 +13,13 @@ const settingsManager = {
       }
       return response;
     } catch (error) {
-      switch (error.message) {
-        case "Hauler already exists!":
-          $("#add-hauler-name")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Hauler already exists! Please choose a different name.":
-          $("#edit-hauler-name")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Plate number already exists! Please choose a different plate number.":
-          $("#edit-plate-no")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Plate number already exists!":
-          $("#add-plate-no")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Driver already exist!":
-          $("#add-driver-fname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#add-driver-mname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#add-driver-lname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Phone number already exist!":
-          $("#add-driver-phone")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Driver already exist! Please try again.":
-          $("#edit-driver-fname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#edit-driver-lname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#edit-driver-mname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Phone number already exist! Please try again.":
-          $("#edit-driver-phone")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Helper already exist!":
-          $("#add-helper-fname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#add-helper-mname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#add-helper-lname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Helper Phone number already exist!":
-          $("#add-helper-phone")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Helper already exist! Please try again.":
-          $("#edit-helper-fname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#edit-helper-lname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          $("#edit-helper-mname")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Helper Phone number already exist! Please try again.":
-          $("#edit-helper-phone")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Project already exist!":
-          $("#add-project-name")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Project already exist! Please try again.":
-          $("#edit-project-name")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Origin already exist!":
-          $("#add-origin-name")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        case "Origin already exist! Please try again.":
-          $("#edit-origin-name")
-            .addClass("is-invalid")
-            .siblings(".invalid-feedback");
-          break;
-        default:
-          console.error("Error:", error.message);
-          showError(error.message || "An unexpected error occurred.");
-          throw error;
-      }
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message,
+        showConfirmButton: false,
+        timer: 1500,
+      });
     }
   },
 };
@@ -183,6 +80,42 @@ function editOrigin(origin) {
   $("#edit-origin-name").val(origin.origin_name);
   $("#edit-origin-code").val(origin.origin_code);
   openModal("#editOriginModal");
+}
+async function toggleDriverStatus(driver_id, status) {
+  try {
+    await settingsManager.request("toggle driver status", {
+      driver_id: driver_id,
+      status: status ? 1 : 0, // Convert boolean to integer
+    });
+    refreshDriversList();
+  } catch (error) {
+    console.error("Error toggling driver status:", error);
+    showError("An error occurred while toggling the driver status.");
+  }
+}
+async function toggleHelperStatus(helper_id, status) {
+  try {
+    await settingsManager.request("toggle helper status", {
+      helper_id: helper_id,
+      status: status ? 1 : 0, // Convert boolean to integer
+    });
+    refreshHelpersList();
+  } catch (error) {
+    console.error("Error toggling helper status:", error);
+    showError("An error occurred while toggling the helper status.");
+  }
+}
+async function toggleVehicleStatus(vehicle_id, status) {
+  try {
+    await settingsManager.request("toggle vehicle status", {
+      vehicle_id: vehicle_id,
+      status: status ? 1 : 0, // Convert boolean to integer
+    });
+    refreshVehicleList();
+  } catch (error) {
+    console.error("Error toggling vehicle status:", error);
+    showError("An error occurred while toggling the vehicle status.");
+  }
 }
 $("#add-hauler").submit(async function (e) {
   e.preventDefault();
@@ -503,13 +436,26 @@ async function refreshVehicleList() {
       vehicleList.html(
         response.data
           .map((vehicle) => {
-            return `<tr onclick='editVehicle(${JSON.stringify(
-              vehicle
-            )})' style="cursor: pointer;">
+            return `<tr>
                           <td class="text-center">${vehicle.hauler_name}</td>
                           <td class="text-center">${vehicle.plate_number}</td>
                           <td class="text-center">${vehicle.truck_type}</td>
-                          <td class="text-center" scope="row"><i class="fa-solid fa-arrow-right"></i></td>
+                          <td class="text-center">
+                            <button class="btn ${
+                              vehicle.status === 1
+                                ? "btn-secondary"
+                                : "btn-primary"
+                            }" onclick="toggleVehicleStatus(${
+              vehicle.vehicle_id
+            }, ${vehicle.status === 1 ? "false" : "true"})">
+                              ${
+                                vehicle.status === 1 ? "Deactivate" : "Activate"
+                              }
+                            </button>
+                          </td>
+                          <td class="text-center" scope="row"><button class='btn btn-primary' onclick='editVehicle(${JSON.stringify(
+                            vehicle
+                          )})'>Edit</button></td>
                         </tr>`;
           })
           .join("")
@@ -547,16 +493,27 @@ async function refreshDriversList() {
       driverList.html(
         response.data
           .map((driver) => {
-            return `<tr onclick='editDriver(${JSON.stringify(
-              driver
-            )})' style="cursor: pointer;">
+            return `<tr>
                           <td class="text-center">${driver.driver_fname} ${
               driver.driver_lname
             }</td>
                           <td class="text-center">${driver.driver_phone}</td>
                           <td class="text-center">${driver.origin_name}</td>
                           <td class="text-center">${driver.hauler_name}</td>
-                          <td class="text-center"><i class="fa-solid fa-arrow-right"></i></td>
+                          <td class="text-center">
+                            <button class="btn ${
+                              driver.status === 1
+                                ? "btn-secondary"
+                                : "btn-primary"
+                            }" onclick="toggleDriverStatus(${
+              driver.driver_id
+            }, ${driver.status === 1 ? "false" : "true"})">
+                              ${driver.status === 1 ? "Deactivate" : "Activate"}
+                            </button>
+                          </td>
+                          <td class="text-center"><button class='btn btn-primary' onclick='editDriver(${JSON.stringify(
+                            driver
+                          )})'>Edit</button></td>
                           </tr>`;
           })
           .join("")
@@ -595,9 +552,7 @@ async function refreshHelpersList() {
       helperList.html(
         response.data
           .map((helper) => {
-            return `<tr onclick='editHelper(${JSON.stringify(
-              helper
-            )})' style="cursor: pointer;">
+            return `<tr>
                           <td class="text-center">${helper.helper_fname} ${
               helper.helper_lname
             }</td>
@@ -606,7 +561,20 @@ async function refreshHelpersList() {
                           }</td>    
                           <td class="text-center">${helper.origin_name}</td>
                           <td class="text-center">${helper.hauler_name}</td>
-                          <td class="text-center"><i class="fa-solid fa-arrow-right"></i></td>
+                          <td class="text-center">
+                            <button class="btn ${
+                              helper.status === 1
+                                ? "btn-secondary"
+                                : "btn-primary"
+                            }" onclick="toggleHelperStatus(${
+              helper.helper_id
+            }, ${helper.status === 1 ? "false" : "true"})">
+                              ${helper.status === 1 ? "Deactivate" : "Activate"}
+                            </button>
+                          </td>
+                          <td class="text-center"><button class="btn btn-primary" onclick='editHelper(${JSON.stringify(
+                            helper
+                          )})'>Edit</button></td>
                           </tr>`;
           })
           .join("")

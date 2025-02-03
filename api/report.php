@@ -2173,6 +2173,9 @@ ORDER BY transaction.transaction_id DESC";
                 $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
 
                 foreach ($transactions as $row) {
+                    // Center table horizontally for each row
+                    $pdf->SetX(($pdf->getPageWidth() - $tableWidth) / 2);
+
                     $fill = ($pdf->GetY() % 2 == 0);
 
                     // Format data
@@ -2189,6 +2192,7 @@ ORDER BY transaction.transaction_id DESC";
                         // Reprint headers on new page
                         $pdf->SetFont('helvetica', 'B', 8);
                         $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
+                        $pdf->SetX(($pdf->getPageWidth() - $tableWidth) / 2); // Center alignment for header on new page
                         foreach ($headers as $index => $header) {
                             $pdf->Cell($colWidths[$index], 7, $header, 1, 0, 'C', true);
                         }
@@ -2197,9 +2201,9 @@ ORDER BY transaction.transaction_id DESC";
                         $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
                     }
 
-                    // Print row data
+                    // Print row data with center alignment
                     foreach ($rowData as $index => $field) {
-                        $pdf->Cell($colWidths[$index], 6, $field, 1, 0, 'C', $fill);
+                        $pdf->Cell($colWidths[$index], 6, $field, 1, 0, 'C', $fill); // Changed alignment to 'C'
                     }
                     $pdf->Ln();
                 }

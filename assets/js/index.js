@@ -5,7 +5,11 @@ $(document).ready(function () {
     const password = $("#password").val();
 
     if (!username || !password) {
-      alert("Please enter both username and password");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please enter both username and password",
+      });
       return;
     }
 
@@ -24,15 +28,33 @@ $(document).ready(function () {
           if (response.redirect) {
             window.location.href = response.redirect;
           } else {
-            alert(response.message);
+            Swal.fire({
+              icon: "success",
+              title: "Success",
+              text: response.message,
+              showConfirmButton: false,
+              timer: 1500,
+            });
           }
         } else {
-          alert(response.message);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: response.message,
+            showConfirmButton: false,
+            timer: 1500,
+          });
         }
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
         console.log(jqXHR.responseText);
-        alert("Error: " + textStatus + " - " + errorThrown);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Error: " + textStatus + " - " + errorThrown,
+          showConfirmButton: false,
+          timer: 1500,
+        });
       });
   });
 });

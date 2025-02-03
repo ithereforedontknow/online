@@ -2,6 +2,7 @@
 include_once('../../includes/header/header-branch.php');
 ?>
 <div class="content1" id="content">
+    <input type="hidden" id="branchName" value="<?= $row['branch'] ?>">
     <div class="container p-5">
         <h1 class="display-5 mb-3 fw-bold">Transaction Form</h1>
         <form id="add-branch-transaction">
@@ -28,19 +29,40 @@ include_once('../../includes/header/header-branch.php');
                             id="add-to-reference"
                             name="add-to-reference"
                             required
-                            maxlength="7">
+                            maxlength="13"
+                            pattern="^\d+(-[A-Z0-9]+)?$"
+                            oninput="this.value = this.value.replace(/[^0-9-]/g, '');">
                         <label for="add-to-reference" class="form-label">TO Reference #</label>
-                        <div class="invalid-feedback">TO Reference already exist</div>
+                        <div class="invalid-feedback">TO Reference format should be numbers only with "-<?= $originCode ?>" suffix</div>
                     </div>
 
                     <script>
                         document.getElementById('add-to-reference').addEventListener('blur', function(event) {
                             const originCode = '<?= $originCode ?>';
                             let value = this.value.toUpperCase();
-                            if (!value.endsWith(`-${originCode}`)) {
+
+                            // Remove any non-numeric characters except hyphen
+                            value = value.replace(/[^0-9-]/g, '');
+
+                            // Remove existing origin code suffix if present
+                            if (value.endsWith(`-${originCode}`)) {
                                 value = value.replace(`-${originCode}`, '');
-                                this.value = value + `-${originCode}`;
                             }
+
+                            // Remove any other hyphens in the number portion
+                            value = value.replace(/-/g, '');
+
+                            // Add the origin code suffix
+                            this.value = value + `-${originCode}`;
+                        });
+
+                        // Add input validation
+                        document.getElementById('add-to-reference').addEventListener('input', function(event) {
+                            // Remove any non-numeric characters as they're typed
+                            let value = this.value.replace(/[^0-9-]/g, '');
+
+                            // Update the input value
+                            this.value = value;
                         });
                     </script>
 
@@ -199,8 +221,35 @@ include_once('../../includes/header/header-branch.php');
         </div>
     </div>
 </div>
-
+<div class="offcanvas offcanvas-end" tabindex="-1" id="viewNotificationsOffcanvas" aria-labelledby="viewNotificationsOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+        <div class="d-flex">
+            <h5 class="offcanvas-title me-2" id="viewNotificationsOffcanvasLabel">
+                Notifications
+                <span class="text-muted small ms-2" id="notificationTotalCount"></span>
+            </h5>
+            <form id="notificationSearchForm" class="me-2">
+                <div class="input-group input-group-sm">
+                    <input
+                        type="search"
+                        id="notificationSearchInput"
+                        class="form-control"
+                        placeholder="Search notifications..."
+                        aria-label="Search notifications">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+    </div>
+    <div class="offcanvas-body p-3">
+        <div id="notificationList" class="list-group list-group-flush">
+            <!-- Notifications will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
 <?php
-include_once('../../includes/offcanvas/view-notifications-offcanvas.php');
 include_once('../../includes/footer/footer-branch.php');
 ?>

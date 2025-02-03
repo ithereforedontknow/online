@@ -28,7 +28,7 @@ class unloadingManager
     public function getUnloading()
     {
         try {
-            $sql = "SELECT * FROM transaction INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id WHERE transaction.status = 'ongoing'";
+            $sql = "SELECT * FROM transaction INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id WHERE transaction.status = 'ongoing'";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);

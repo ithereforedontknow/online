@@ -21,15 +21,6 @@ const reportManager = {
   },
 };
 
-function toggleUserSelect() {
-  const signature = $("#signature").val();
-  if (signature === "yes") {
-    $("#userSelect").show();
-  } else {
-    $("#userSelect").hide();
-  }
-}
-
 function reportModal(type) {
   const formId = "reportForm"; // Use a consistent form ID
   const submitButton = $("#generateReport");
@@ -52,37 +43,30 @@ function logReports(reportType) {
 }
 $("#reportForm").submit(function (e) {
   e.preventDefault();
+
   const dateTo = $("#dateTo").val();
   const dateFrom = $("#dateFrom").val();
+
   if (dateTo < dateFrom) {
     $("#dateTo").addClass("is-invalid");
     return;
   } else {
     $("#dateTo").removeClass("is-invalid");
   }
+
   if (dateFrom > dateTo) {
     $("#dateFrom").addClass("is-invalid");
     return;
   } else {
     $("#dateFrom").removeClass("is-invalid");
   }
-  // Signature logic
-  const signature =
-    $("#signature").val() === "no"
-      ? $("#currentUser").val()
-      : $("#user").val() || null;
 
-  if ($("#signature").val() === "yes" && !$("#user").val()) {
-    alert("Please select a user for the signature.");
-    return;
-  }
-  console.log(signature);
   const data = {
     action: $("#reportType").val(),
     branch: $("#branch").val(),
     dateFrom: $("#dateFrom").val(),
     dateTo: $("#dateTo").val(),
-    signature: signature,
+    signature: $("#signature").val(),
     reportFormat: $("#reportFormat").val(),
   };
 
@@ -100,6 +84,7 @@ $("#reportForm").submit(function (e) {
     input.value = data[key];
     form.appendChild(input);
   });
+
   // Append the form to the body, submit it, and remove it
   document.body.appendChild(form);
   form.submit();
@@ -108,10 +93,6 @@ $("#reportForm").submit(function (e) {
 
 $("#allReportsForm").submit(function (e) {
   // Debug output
-  console.log("Date From:", $("#dateFrom").val());
-  console.log("Date To:", $("#dateTo").val());
-  console.log("Branch:", $("#all-reports-branch").val());
-  console.log("Status:", $("#all-reports-status").val());
   e.preventDefault();
   const dateTo = $("#dateTo").val();
   const dateFrom = $("#dateFrom").val();
@@ -127,24 +108,13 @@ $("#allReportsForm").submit(function (e) {
   } else {
     $("#dateFrom").removeClass("is-invalid");
   }
-  // Signature logic
-  const signature =
-    $("#all-reports-signature").val() === "no"
-      ? $("#currentUser").val()
-      : $("#user").val() || null;
-
-  if ($("#all-reports-signature").val() === "yes" && !$("#user").val()) {
-    alert("Please select a user for the signature.");
-    return;
-  }
-  console.log(signature);
   const data = {
     action: "all-reports",
     status: $("#all-reports-status").val(),
     branch: $("#all-reports-branch").val(),
     dateFrom: $("#dateFrom").val(),
     dateTo: $("#dateTo").val(),
-    signature: signature,
+    signature: $("#all-reports-signature").val(),
     reportFormat: $("#all-reports-reportFormat").val(),
   };
 
@@ -169,20 +139,11 @@ $("#allReportsForm").submit(function (e) {
 });
 $("#logsReportForm").submit(function (e) {
   e.preventDefault();
-  // Signature logic
-  const signature =
-    $("#all-reports-signature").val() === "no"
-      ? $("#currentUser").val()
-      : $("#user").val() || null;
 
-  if ($("#all-reports-signature").val() === "yes" && !$("#user").val()) {
-    alert("Please select a user for the signature.");
-    return;
-  }
   const data = {
     action: $("#logReportType").val(),
     reportFormat: $("#logReportFormat").val(),
-    signature: signature,
+    signature: $("#logSignature").val(),
   };
   const form = document.createElement("form");
   form.method = "POST";

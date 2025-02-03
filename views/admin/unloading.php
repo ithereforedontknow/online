@@ -2,7 +2,7 @@
 include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
-    <div class="container">
+    <div class="container-fluid">
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
@@ -25,7 +25,7 @@ include_once('../../includes/header/header-admin.php');
                         <table class="table table-hover text-center small-font" id="unloading-table">
                             <thead>
                                 <tr>
-                                    <th class="text-center" scope="col">To Reference</th>
+                                    <th class="text-center" scope="col">Plate Number</th>
                                     <th class="text-center" scope="col">Time of Entry</th>
                                     <th class="text-center" scope="col">Unloading Time Start</th>
                                     <th class="text-center" scope="col">Unloading Time End</th>

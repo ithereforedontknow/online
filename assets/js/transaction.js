@@ -252,6 +252,7 @@ $("#add-transaction").submit(async function (e) {
   try {
     await transactionManager.createTransaction(data);
     $("#addTransactionModal").modal("hide");
+    refreshArrivedList();
   } catch (error) {
     console.log(data);
     Swal.fire({
@@ -369,6 +370,7 @@ $("#edit-transaction-actual-form").submit(async function (e) {
   try {
     await transactionManager.updateTransaction(data);
     $("#editTransactionModal").modal("hide");
+    refreshDepartedList();
   } catch (error) {
     Swal.fire({
       icon: "error",
@@ -578,117 +580,74 @@ $(document).on("submit", ".arrival-transaction-form", async function (event) {
     });
   }
 });
-
 $("#divert-transaction-form").submit(async function (e) {
   e.preventDefault();
-  Swal.fire({
-    title: "Are you sure?",
-    text: "You won't be able to revert this!",
-    icon: "warning",
+
+  const result = await Swal.fire({
+    title: "Set Status",
+    text: "Make Drivers, Helpers, and Vehicle Available",
+    icon: "info",
     showCancelButton: true,
     confirmButtonColor: "#1f3a69",
     cancelButtonColor: "#5c636a",
-    confirmButtonText: "Yes, divert it!",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      Swal.fire({
-        title: "Set Status",
-        text: "Make Drivers, Helpers, and Vehicle Available",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonColor: "#1f3a69",
-        cancelButtonColor: "#5c636a",
-        confirmButtonText: "Yes",
-        denyButtonText: "No",
-        showDenyButton: true,
-        denyButtonColor: "#5c636a",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const data = {
-            action: "divert",
-            transaction_id: $("#divert-transaction-transaction-id").val(),
-            to_reference: $("#divert-transaction-to-reference").val(),
-            origin_id: $("#divert-transaction-branch").val(),
-            remarks: $("#divert-transaction-remarks").val(),
-            set_available: true,
-          };
-          try {
-            const response = $.ajax({
-              url: "../../api/transaction.php",
-              method: "POST",
-              data: data,
-              dataType: "json",
-            });
-            if (response.success) {
-              refreshArrivedList();
-              $("#divertTransactionOffcanvas").offcanvas("hide");
-              Swal.fire({
-                title: "Updated!",
-                text: "Transaction diverted to another branch.",
-                icon: "success",
-                showConfirmButton: true,
-                confirmButtonText: "Print transaction form",
-                confirmButtonColor: "#1f3a69",
-                showCancelButton: true,
-                cancelButtonText: "No",
-                cancelButtonColor: "#5c636a",
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  $("#divertTransactionModal").modal("hide");
-                  printTransaction(data.transaction_id);
-                }
-              });
-            } else {
-              console.error("Transaction diversion failed:", response.data);
-            }
-          } catch (error) {
-            console.error("Transaction diversion failed:", error);
-          }
-        } else if (result.isDenied) {
-          const data = {
-            action: "divert",
-            transaction_id: $("#divert-transaction-transaction-id").val(),
-            to_reference: $("#divert-transaction-to-reference").val(),
-            origin_id: $("#divert-transaction-branch").val(),
-            remarks: $("#divert-transaction-remarks").val(),
-            set_available: false,
-          };
-          try {
-            const response = $.ajax({
-              url: "../../api/transaction.php",
-              method: "POST",
-              data: data,
-              dataType: "json",
-            });
-            if (response.success) {
-              refreshArrivedList();
-              $("#divertTransactionOffcanvas").offcanvas("hide");
-              Swal.fire({
-                title: "Updated!",
-                text: "Transaction diverted to another branch.",
-                icon: "success",
-                showConfirmButton: true,
-                confirmButtonText: "Print transaction form",
-                confirmButtonColor: "#1f3a69",
-                showCancelButton: true,
-                cancelButtonText: "No",
-                cancelButtonColor: "#5c636a",
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  $("#divertTransactionModal").modal("hide");
-                  printTransaction(data.transaction_id);
-                }
-              });
-            } else {
-              console.error("Transaction diversion failed:", response.data);
-            }
-          } catch (error) {
-            console.error("Transaction diversion failed:", error);
-          }
+    confirmButtonText: "Yes",
+    denyButtonText: "No",
+    showDenyButton: true,
+    denyButtonColor: "#5c636a",
+  });
+
+  if (!result.isDismissed) {
+    const data = {
+      action: "divert",
+      transaction_id: $("#divert-transaction-transaction-id").val(),
+      to_reference: $("#divert-transaction-to-reference").val(),
+      origin_id: $("#divert-transaction-branch").val(),
+      remarks: $("#divert-transaction-remarks").val(),
+      set_available: result.isConfirmed,
+    };
+
+    try {
+      const response = await $.ajax({
+        url: "../../api/transaction.php",
+        method: "POST",
+        data: data,
+        dataType: "json",
+      });
+
+      if (response.success) {
+        refreshArrivedList();
+        $("#divertTransactionModal").modal("hide");
+
+        const printResult = await Swal.fire({
+          title: "Updated!",
+          text: "Transaction diverted to another branch.",
+          icon: "success",
+          showConfirmButton: true,
+          confirmButtonText: "Print transaction form",
+          confirmButtonColor: "#1f3a69",
+          showCancelButton: true,
+          cancelButtonText: "No",
+          cancelButtonColor: "#5c636a",
+        });
+
+        if (printResult.isConfirmed) {
+          $("#divertTransactionModal").modal("hide");
+          printTransaction(data.transaction_id);
         }
+      } else {
+        throw new Error(response.data || "Transaction diversion failed");
+      }
+    } catch (error) {
+      console.error("Transaction diversion failed:", error);
+      Swal.fire({
+        title: "Error",
+        text:
+          error.message || "Failed to divert transaction. Please try again.",
+        icon: "error",
+        confirmButtonColor: "#1f3a69",
       });
     }
-  });
+  }
 });
 
 $("#finished-transaction-form").submit(async function (e) {

@@ -1,6 +1,9 @@
 <?php
 session_start();
 require '../config/connection.php';
+require_once('../vendor/autoload.php');
+
+use Semaphore\SemaphoreClient;
 
 // Improved error handling and security
 header('Content-Type: application/json');
@@ -235,7 +238,7 @@ class queueManager
     public function getToEnter($status)
     {
         try {
-            $stmt = $this->conn->prepare("SELECT * FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.status = :status || transaction.status = 'standby - sms sent'");
+            $stmt = $this->conn->prepare("SELECT transaction.transaction_id, vehicle.plate_number, transaction.status, arrival.arrival_time FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.status = :status || transaction.status = 'standby - sms sent'");
             $stmt->execute(['status' => $status]);
             $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $this->sendResponse(true, 'Transactions retrieved successfully', ['transactions' => $transactions]);
@@ -388,13 +391,18 @@ class queueManager
             $stmt->execute(['transaction_id' => $transaction_id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Check if SMS was already sent and if the action is not forced
-            if ($row['status'] === 'standby - sms sent' && !$force) {
-                $this->sendResponse("false", "SMS already sent");
+            if (!$row) {
+                $this->sendResponse(false, "Transaction not found");
                 return;
             }
 
-            // Update the transaction status if not already updated
+            // Check if SMS was already sent and if the action is not forced
+            if ($row['status'] === 'standby - sms sent' && !$force) {
+                $this->sendResponse(false, "SMS already sent");
+                return;
+            }
+
+            // Update transaction status
             if (!$force) {
                 $stmt = "UPDATE transaction SET status = 'standby - sms sent' WHERE transaction_id = :transaction_id";
                 $stmt = $this->conn->prepare($stmt);
@@ -402,13 +410,32 @@ class queueManager
             }
 
             // Fetch driver and vehicle details
-            $stmt = "SELECT * FROM transaction 
+            $stmt = "SELECT driver.driver_fname, driver.driver_lname, driver.driver_phone, vehicle.plate_number, queue.transfer_in_line 
+                 FROM transaction 
                  INNER JOIN driver ON transaction.driver_id = driver.driver_id 
                  INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id 
-                 WHERE transaction_id = :transaction_id";
+                 INNER JOIN queue ON transaction.transaction_id = queue.transaction_id
+                 WHERE transaction.transaction_id = :transaction_id";
             $stmt = $this->conn->prepare($stmt);
             $stmt->execute(['transaction_id' => $transaction_id]);
             $driver = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$driver) {
+                $this->sendResponse(false, "Driver or vehicle details not found");
+                return;
+            }
+
+            // Construct SMS message
+            $message = "Hi " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ", your vehicle with plate number " . $driver['plate_number'] . " has been processed." . " You may enter " . $driver['transfer_in_line'] . ". Please be on time.";
+
+            // Send SMS via Semaphore API
+            $apiKey = "6c557df5b5cfb79a20287af09f6f85af"; // Replace with your API key
+            $smsResponse = $this->send_sms($apiKey, $driver['driver_phone'], $message);
+
+            if (!$smsResponse) {
+                $this->sendResponse(false, "Failed to send SMS");
+                return;
+            }
 
             // Log the SMS sending action
             $stmt = "INSERT INTO transaction_log (transaction_id, details, created_by) 
@@ -420,7 +447,7 @@ class queueManager
                 ':created_by' => $_SESSION['username']
             ]);
 
-            // Send the SMS
+            // Log SMS details
             $sendAttempt = 1;
             $stmt = "SELECT send_attempt FROM sms_log WHERE transaction_id = :transaction_id AND recipient_number = :recipient_number";
             $stmt = $this->conn->prepare($stmt);
@@ -438,7 +465,6 @@ class queueManager
             }
 
             $stmt = $this->conn->prepare($stmt);
-            $message = "Hi " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ", your transaction has been processed. Please be on time.";
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
                 ':recipient_number' => $driver['driver_phone'],
@@ -446,10 +472,38 @@ class queueManager
                 ':send_attempt' => $sendAttempt
             ]);
 
-            $this->sendResponse("true", "SMS sent successfully", ['transaction' => $row]);
+            $this->sendResponse(true, "SMS sent successfully", ['transaction' => $row]);
         } catch (PDOException $e) {
             error_log('Error sending SMS: ' . $e->getMessage());
             $this->sendResponse(false, 'Error sending SMS');
+        }
+    }
+
+    // Function to send SMS via Semaphore API
+    private function send_sms($api_key, $number, $message)
+    {
+        $url = "https://api.semaphore.co/api/v4/messages";
+
+        $data = [
+            'apikey' => $api_key,
+            'number' => $number,
+            'message' => $message,
+            'sendername' => 'PUVFMS' // Optional: Replace with your registered sender name
+        ];
+
+        try {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+            return json_decode($response, true); // Return API response as an array
+        } catch (Exception $e) {
+            error_log('Error sending SMS via Semaphore API: ' . $e->getMessage());
+            return false;
         }
     }
 }

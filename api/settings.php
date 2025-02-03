@@ -135,7 +135,7 @@ class settingsManager
     public function getVehicles()
     {
         try {
-            $sql = "SELECT * FROM vehicle INNER JOIN hauler ON vehicle.hauler_id = hauler.hauler_id";
+            $sql = "SELECT vehicle.*, hauler.hauler_name, hauler.hauler_id FROM vehicle INNER JOIN hauler ON vehicle.hauler_id = hauler.hauler_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $vehicles = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -211,7 +211,7 @@ class settingsManager
     public function getDrivers()
     {
         try {
-            $sql = "SELECT * FROM driver INNER JOIN hauler ON driver.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id";
+            $sql = "SELECT driver.driver_id, driver.driver_fname, driver.driver_lname, driver.driver_mname, driver.driver_phone, hauler.hauler_name, driver.status, origin.origin_name, hauler.hauler_id FROM driver INNER JOIN hauler ON driver.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $drivers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -224,7 +224,7 @@ class settingsManager
     public function getHelpers()
     {
         try {
-            $sql = "SELECT * FROM helper INNER JOIN hauler ON helper.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id";
+            $sql = "SELECT helper.helper_id, helper.helper_fname, helper.helper_lname, helper.helper_mname, helper.helper_phone, hauler.hauler_name, helper.status, origin.origin_name, hauler.hauler_id FROM helper INNER JOIN hauler ON helper.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $helpers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -248,8 +248,7 @@ class settingsManager
                 $this->sendResponse(false, 'Driver already exist!');
                 return;
             }
-
-            $sql = "SELECT * FROM driver WHERE driver_phone = :driver_phone";
+            $sql = "SELECT * FROM driver WHERE driver_phone = :driver_phone UNION SELECT * FROM helper WHERE helper_phone = :driver_phone";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 'driver_phone' => $driver_phone
@@ -339,13 +338,13 @@ class settingsManager
                 $this->sendResponse(false, 'Helper already exist!');
                 return;
             }
-            $sql = "SELECT * FROM helper WHERE helper_phone = :helper_phone";
+            $sql = "SELECT * FROM helper WHERE helper_phone = :helper_phone UNION SELECT * FROM driver WHERE driver_phone = :helper_phone";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 'helper_phone' => $helper_phone
             ]);
             if ($stmt->rowCount() > 0) {
-                $this->sendResponse(false, 'Helper Phone number already exist!');
+                $this->sendResponse(false, 'Phone number already exist!');
                 return;
             }
             $sql = "INSERT INTO helper (hauler_id, helper_fname, helper_mname, helper_lname, helper_phone) VALUES (:hauler_id, :helper_fname, :helper_mname, :helper_lname, :helper_phone)";
@@ -592,6 +591,68 @@ class settingsManager
             $this->sendResponse(false, 'Internal server error');
         }
     }
+    public function toggleDriverStatus($driver_id, $status)
+    {
+        try {
+            $sql = "UPDATE driver SET status = :status WHERE driver_id = :driver_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'status' => $status,
+                'driver_id' => $driver_id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('driver', :details, :created_by)");
+            $stmt->execute([
+                ':details' => 'Driver status updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
+            $this->sendResponse(true, 'Driver status updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error', $e->getMessage());
+        }
+    }
+
+    public function toggleHelperStatus($helper_id, $status)
+    {
+        try {
+            $sql = "UPDATE helper SET status = :status WHERE helper_id = :helper_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'status' => $status,
+                'helper_id' => $helper_id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('driver', :details, :created_by)");
+            $stmt->execute([
+                ':details' => 'Helper status updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
+            $this->sendResponse(true, 'Helper status updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error', $e->getMessage());
+        }
+    }
+
+    public function toggleVehicleStatus($vehicle_id, $status)
+    {
+        try {
+            $sql = "UPDATE vehicle SET status = :status WHERE vehicle_id = :vehicle_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                'status' => $status,
+                'vehicle_id' => $vehicle_id
+            ]);
+            $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('driver', :details, :created_by)");
+            $stmt->execute([
+                ':details' => 'Vehicle status updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username']
+            ]);
+            $this->sendResponse(true, 'Vehicle status updated successfully');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error', $e->getMessage());
+        }
+    }
 }
 
 
@@ -717,6 +778,21 @@ try {
             case 'update demurrage':
                 $demurrage = $_POST['demurrage'] ?? null;
                 $settingsManager->updateDemurrage($demurrage);
+                break;
+            case 'toggle driver status':
+                $driver_id = $_POST['driver_id'] ?? null;
+                $status = $_POST['status'] ?? null;
+                $settingsManager->toggleDriverStatus($driver_id, $status);
+                break;
+            case 'toggle helper status':
+                $helper_id = $_POST['helper_id'] ?? null;
+                $status = $_POST['status'] ?? null;
+                $settingsManager->toggleHelperStatus($helper_id, $status);
+                break;
+            case 'toggle vehicle status':
+                $vehicle_id = $_POST['vehicle_id'] ?? null;
+                $status = $_POST['status'] ?? null;
+                $settingsManager->toggleVehicleStatus($vehicle_id, $status);
                 break;
             default:
                 $settingsManager->sendResponse(false, 'Invalid action');

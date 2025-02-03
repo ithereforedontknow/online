@@ -30,6 +30,7 @@ include_once('../../includes/header/header-admin.php');
                         <th class="text-center" scope="col">Phone</th>
                         <th class="text-center" scope="col">Branch</th>
                         <th class="text-center" scope="col">Hauler</th>
+                        <th class="text-center" scope="col">Status</th>
                         <th class="text-center" scope="col">...</th>
                     </thead>
                     <tbody id="driver-list">
@@ -47,6 +48,7 @@ include_once('../../includes/header/header-admin.php');
                         <th class="text-center" scope="col">Phone</th>
                         <th class="text-center" scope="col">Branch</th>
                         <th class="text-center" scope="col">Hauler</th>
+                        <th class="text-center" scope="col">Status</th>
                         <th class="text-center" scope="col">...</th>
                     </thead>
                     <tbody id="helper-list">

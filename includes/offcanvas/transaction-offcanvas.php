@@ -29,7 +29,9 @@
                                     id="to-reference"
                                     name="to-reference"
                                     required
-                                    maxlength="50"> <!-- Increased maxlength for concatenation -->
+                                    maxlength="13"
+                                    pattern="^\d+(-[A-Z0-9]+)?$"
+                                    oninput="this.value = this.value.replace(/[^0-9-]/g, '');">
                                 <label for="to-reference" class="form-label">TO Reference #</label>
                                 <div class="invalid-feedback">TO Reference already exists</div>
                             </div>
@@ -174,7 +176,9 @@
                                     id="edit-to-reference"
                                     name="edit-to-reference"
                                     required
-                                    maxlength="50"> <!-- Increased maxlength for concatenation -->
+                                    maxlength="13"
+                                    pattern="^\d+(-[A-Z0-9]+)?$"
+                                    oninput="this.value = this.value.replace(/[^0-9-]/g, '');">
                                 <label for="edit-to-reference" class="form-label">TO Reference #</label>
                                 <div class="invalid-feedback">TO Reference already exists</div>
                             </div>
@@ -288,15 +292,15 @@
 
     // Update TO Reference when origin changes
     editOriginSelect.addEventListener('change', function() {
-        updateToReference();
+        updateEditToReference();
     });
 
     // Append origin code when the user inputs a number
     editToReferenceInput.addEventListener('blur', function() {
-        updateToReference();
+        updateEditToReference();
     });
 
-    function updateToReference() {
+    function updateEditToReference() {
         const selectedOption = editOriginSelect.options[editOriginSelect.selectedIndex];
         const originCode = selectedOption.getAttribute('data-code') || '';
         let inputValue = editToReferenceInput.value;

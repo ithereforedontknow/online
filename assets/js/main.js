@@ -49,6 +49,8 @@ async function getNotificationCount() {
     notificationBadge.style.display = "none";
   }
 }
+// Set timer to auto-update notification count every 10 seconds
+setInterval(getNotificationCount, 5000);
 let currentOffset = 0;
 let currentLimit = 15;
 let currentSearchTerm = "";
@@ -147,6 +149,7 @@ async function fetchNotifications(limit = 15, offset = 0, searchTerm = "") {
     `;
   }
 }
+setInterval(fetchNotifications, 5000);
 
 // Add search functionality
 document

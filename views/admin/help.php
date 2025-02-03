@@ -2,7 +2,7 @@
 include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
-    <div class="container">
+    <div class="container-fluid">
         <input type="text" class="form-control w-25 mb-3" name="search" id="search" placeholder="Search">
         <a href="api/export_manual.php" target="_blank" class="btn btn-primary" id="exportBtn">Export to PDF</a>
         <img src="../../assets/img/ULPI_BLUE (1).png" class="mx-auto d-block" alt="" style="width: 500px;">

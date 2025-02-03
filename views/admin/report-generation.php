@@ -2,7 +2,7 @@
 include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
-    <div class="container">
+    <div class="container-fluid">
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
@@ -130,30 +130,16 @@ include_once('../../includes/header/header-admin.php');
                         <label for="branch">Branch</label>
                     </div>
                     <div class="form-floating mb-3">
-                        <?php
-                        $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
-                        $stmt->bindParam(':id', $_SESSION['id'], PDO::PARAM_INT);
-                        $stmt->execute();
-                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        ?>
-                        <input type="hidden" name="currentUser" id="currentUser" value="<?= $user['fname'] . ' ' . $user['lname']; ?>">
-                        <select name="signature" id="signature" class="form-select" onchange="toggleUserSelect()">
-                            <option value="no" selected>No</option>
-                            <option value="yes">Yes</option>
-                        </select>
-                        <label for="signature">Change Signature</label>
-                    </div>
-                    <div class="form-floating mb-3" id="userSelect" style="display: none;">
-                        <select name="user" id="user" class="form-select">
+                        <select name="signature" id="signature" class="form-select">
                             <?php
                             $stmt = $conn->prepare("SELECT * FROM users WHERE userlevel = 'admin' OR userlevel = 'traffic(main)'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['user_id'] . '">' . $row['fname'] . ' ' . $row['lname'] . '</option>';
+                                echo '<option>' . $row['fname'] . ' ' . $row['lname'] . '</option>';
                             }
                             ?>
                         </select>
-                        <label for="user">User</label>
+                        <label for="signature">Signature</label>
                     </div>
                     <div class="form-floating">
                         <select name="reportFormat" id="reportFormat" class="form-select" required>
@@ -208,30 +194,16 @@ include_once('../../includes/header/header-admin.php');
                         <label for="all-reports-status">Status</label>
                     </div>
                     <div class="form-floating mb-3">
-                        <?php
-                        $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
-                        $stmt->bindParam(':id', $_SESSION['id'], PDO::PARAM_INT);
-                        $stmt->execute();
-                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        ?>
-                        <input type="hidden" name="currentUser" id="currentUser" value="<?= $user['fname'] . ' ' . $user['lname']; ?>">
-                        <select name="all-reports-signature" id="all-reports-signature" class="form-select" onchange="toggleUserSelect()">
-                            <option value="no" selected>No</option>
-                            <option value="yes">Yes</option>
-                        </select>
-                        <label for="all-reports-signature">Change Signature</label>
-                    </div>
-                    <div class="form-floating mb-3" id="userSelect" style="display: none;">
-                        <select name="user" id="user" class="form-select">
+                        <select name="all-reports-signature" id="all-reports-signature" class="form-select">
                             <?php
                             $stmt = $conn->prepare("SELECT * FROM users WHERE userlevel = 'admin' OR userlevel = 'traffic(main)'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['user_id'] . '">' . $row['fname'] . ' ' . $row['lname'] . '</option>';
+                                echo '<option>' . $row['fname'] . ' ' . $row['lname'] . '</option>';
                             }
                             ?>
                         </select>
-                        <label for="user">User</label>
+                        <label for="all-reports-signature">Signature</label>
                     </div>
                     <div class="form-floating">
                         <select name="all-reports-reportFormat" id="all-reports-reportFormat" class="form-select" required>
@@ -260,30 +232,16 @@ include_once('../../includes/header/header-admin.php');
                 <form id="logsReportForm">
                     <input type="hidden" name="logReportType" id="logReportType" value="logs">
                     <div class="form-floating mb-3">
-                        <?php
-                        $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
-                        $stmt->bindParam(':id', $_SESSION['id'], PDO::PARAM_INT);
-                        $stmt->execute();
-                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        ?>
-                        <input type="hidden" name="currentUser" id="currentUser" value="<?= $user['fname'] . ' ' . $user['lname']; ?>">
-                        <select name="signature" id="signature" class="form-select" onchange="toggleUserSelect()">
-                            <option value="no" selected>No</option>
-                            <option value="yes">Yes</option>
-                        </select>
-                        <label for="signature">Change Signature</label>
-                    </div>
-                    <div class="form-floating mb-3" id="userSelect" style="display: none;">
-                        <select name="user" id="user" class="form-select">
+                        <select name="logReportSignature" id="logReportSignature" class="form-select">
                             <?php
                             $stmt = $conn->prepare("SELECT * FROM users WHERE userlevel = 'admin' OR userlevel = 'traffic(main)'");
                             $stmt->execute();
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['user_id'] . '">' . $row['fname'] . ' ' . $row['lname'] . '</option>';
+                                echo '<option>' . $row['fname'] . ' ' . $row['lname'] . '</option>';
                             }
                             ?>
                         </select>
-                        <label for="user">User</label>
+                        <label for="logReportSignature">Signature</label>
                     </div>
                     <div class="form-floating">
                         <select name="logReportFormat" id="logReportFormat" class="form-select" required>

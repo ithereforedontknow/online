@@ -312,8 +312,8 @@ class TransactionManager
             $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
             $stmt->execute([
                 ':transaction_id' => $data['transaction_id'],
-                ':details' => $to_reference . ' Transaction updated by ' . $created_by,
-                ':created_by' => $created_by,
+                ':details' => $to_reference . ' Transaction updated by ' . $_SESSION['username'],
+                ':created_by' => $_SESSION['username'],
             ]);
             $this->sendResponse(true, 'Transaction updated successfully');
         } catch (PDOException $e) {
@@ -780,7 +780,7 @@ class TransactionManager
                 ':details' => $data['to_reference'] . 'Transaction diverted to ' . $data['origin_id'] . ' by ' . $_SESSION['username']
             ]);
 
-            $this->sendResponse(true, 'Transaction diverted successfully');
+            return $this->sendResponse(true, 'Transaction diverted successfully');
         } catch (PDOException $e) {
             error_log('Database error: ' . $e->getMessage());
             $this->sendResponse(false, 'Error diverting transaction', $e->getMessage());

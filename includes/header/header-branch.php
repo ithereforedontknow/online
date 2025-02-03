@@ -5,7 +5,7 @@ if (!isset($_SESSION['id']) || $_SESSION['userlevel'] !== 'traffic(branch)') {
     header('Location: ../index.php');
 } // Assuming you have a database connection in $conn
 $userId = $_SESSION['id']; // Example: get the user ID from session
-$stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
+$stmt = $conn->prepare("SELECT * FROM users INNER JOIN origin ON users.branch = origin.origin_id WHERE id = :id");
 $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -31,54 +31,11 @@ $row = $stmt->fetch(PDO::FETCH_ASSOC);
         <div class="collapse navbar-collapse justify-content-end">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item dropdown ">
-                    <a class="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link" href="#viewNotificationsOffcanvas" role="button" data-bs-toggle="offcanvas" aria-expanded="false">
                         <i class="fa-solid fa-bell fa-lg" style="color:#ffffff"></i>
-                        <span class="badge bg-danger rounded-circle">
-                            <?php
-                            $currentTime = date('Y-m-d H:i:s');
-                            $stmt = $conn->prepare("SELECT COUNT(*) FROM transaction WHERE created_at >= :currentTime AND status = 'departed'");
-                            $stmt->bindParam(':currentTime', $currentTime);
-                            $stmt->execute();
-                            $transactionCount = $stmt->fetchColumn();
-                            echo $transactionCount;
-                            ?>
+                        <span class="badge bg-danger rounded-circle" id="notificationBadge">
                         </span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end bg-dark dropdown-menu-dark shadow" aria-labelledby="notificationDropdown">
-                        <?php
-                        $currentTime = date('Y-m-d H:i:s');
-                        $stmt = $conn->prepare("SELECT transaction.to_reference, transaction.created_at, origin.origin_name 
-                                                FROM transaction 
-                                                RIGHT JOIN origin ON transaction.origin_id = origin.origin_id 
-                                                WHERE transaction.created_at >= :currentTime AND status = 'departed' 
-                                                ORDER BY transaction_id DESC");
-                        $stmt->bindParam(':currentTime', $currentTime);
-                        $stmt->execute();
-                        if ($stmt->rowCount() > 0) {
-                            while ($transaction = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                        ?>
-                                <li>
-                                    <a class="dropdown-item" href="#">
-                                        <?= "{$transaction['to_reference']} has departed from {$transaction['origin_name']}" ?>
-                                        <div>
-                                            <?= date('F j, Y, g:i a', strtotime($transaction['created_at'])) ?>
-                                        </div>
-                                    </a>
-                                </li>
-
-                            <?php
-                            }
-                        } else {
-                            ?>
-                            <li><a class="dropdown-item" href="#">No Notifications</a></li>
-                        <?php
-                        }
-                        ?>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item" data-bs-toggle="offcanvas" role="button" href="#viewNotificationsOffcanvas">View all notifications</a></li>
-                    </ul>
                 </li>
                 <div class="dropdown">
                     <li class="nav-item dropdown bg">

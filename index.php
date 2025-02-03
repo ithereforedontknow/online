@@ -58,6 +58,7 @@ session_start();
   </main>
   <script src="public/js/bootstrap.bundle.min.js"></script>
   <script src="public/js/jquery.min.js"></script>
+  <script src="public/js/sweetalert2.all.min.js"></script>
   <script src="assets/js/index.js"></script>
 </body>
 

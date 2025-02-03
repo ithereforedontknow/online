@@ -159,7 +159,7 @@ async function refreshUnloadingList() {
         .map(
           (transaction) => `
             <tr>
-  <td class="text-center">${transaction.to_reference}</td>
+  <td class="text-center">${transaction.plate_number}</td>
   <td class="text-center">${new Date(transaction.time_of_entry).toLocaleString(
     "en-US",
     {
