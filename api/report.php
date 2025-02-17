@@ -333,9 +333,10 @@ class reportManager
                         $row['project_name'],
                         $row['no_of_bales'],
                         $row['no_of_bales'],
-                        number_format($row['kilos'], 2),
-                        number_format($row['transfer_out_kilos'], 2),
-                        number_format($row['scrap'], 2),
+                        number_format($row['kilos'] ?? 0, 2),
+                        number_format($row['transfer_out_kilos'] ?? 0, 2),
+                        number_format($row['scrap'] ?? 0, 2),
+
                         $row['guia'],
                         $row['truck_type'],
                         $row['hauler_name'],
@@ -831,34 +832,35 @@ ORDER BY transaction.transaction_id DESC";
 
             // Query remains the same...
             $query = "SELECT 
-            t.status as status,
-            a.arrival_date,
-            t.kilos as kilos,
-            u.transfer_out_kilos as unloaded,
-            COUNT(DISTINCT t.transaction_id) as arrived,
-            SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as unloaded_new_entry,
-            SUM(CASE WHEN t.status = 'ongoing' THEN 1 ELSE 0 END) as ongoing_new_entry,
-            SUM(CASE WHEN t.status = 'diverted' THEN 1 ELSE 0 END) as diverted_new_entry,
-            SUM(CASE WHEN t.kilos != u.transfer_out_kilos AND (t.status = 'done' OR t.status = 'diverted') THEN 1 ELSE 0 END) as total_backlog,
-            SUM(CASE WHEN q.transfer_in_line = 'GLAD WHSE' THEN 1 ELSE 0 END) as glad_receiving,
-            SUM(CASE WHEN q.transfer_in_line = 'Line 3' THEN 1 ELSE 0 END) as of_line_3,
-            SUM(CASE WHEN q.transfer_in_line = 'Line 4' THEN 1 ELSE 0 END) as of_line_4,
-            SUM(CASE WHEN q.transfer_in_line = 'Line 5' THEN 1 ELSE 0 END) as of_line_5,
-            SUM(CASE WHEN q.transfer_in_line = 'Line 6' THEN 1 ELSE 0 END) as of_line_6,
-            SUM(CASE WHEN q.transfer_in_line = 'Line 7' THEN 1 ELSE 0 END) as of_line_7,
-            SUM(CASE WHEN q.transfer_in_line = 'WHSE 2-BAY 3' THEN 1 ELSE 0 END) as whse_2_bay_3,
-            SUM(CASE WHEN q.transfer_in_line = 'WHSE 2-BAY 2' THEN 1 ELSE 0 END) as whse_2_bay_2,
-            COUNT(q.queue_id) as total,
-            SUM(CASE WHEN q.shift = 'day' THEN 1 ELSE 0 END) as day_shift,
-            SUM(CASE WHEN q.shift = 'night' THEN 1 ELSE 0 END) as night_shift,
-            SUM(CASE WHEN q.shift = 'day/night' THEN 1 ELSE 0 END) as day_night
-        FROM arrival a
-        INNER JOIN transaction t ON a.transaction_id = t.transaction_id
-        INNER JOIN unloading u ON t.transaction_id = u.transaction_id
-        LEFT JOIN queue q ON t.transaction_id = q.transaction_id
-        WHERE a.arrival_date BETWEEN :dateFrom AND :dateTo
-        GROUP BY a.arrival_date
-        ORDER BY a.arrival_date DESC";
+    MAX(t.status) as status,
+    a.arrival_date,
+    SUM(t.kilos) as kilos,
+    SUM(u.transfer_out_kilos) as unloaded,
+    COUNT(DISTINCT t.transaction_id) as arrived,
+    SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as unloaded_new_entry,
+    SUM(CASE WHEN t.status = 'ongoing' THEN 1 ELSE 0 END) as ongoing_new_entry,
+    SUM(CASE WHEN t.status = 'diverted' THEN 1 ELSE 0 END) as diverted_new_entry,
+    SUM(CASE WHEN t.kilos != u.transfer_out_kilos AND (t.status = 'done' OR t.status = 'diverted') THEN 1 ELSE 0 END) as total_backlog,
+    SUM(CASE WHEN q.transfer_in_line = 'GLAD WHSE' THEN 1 ELSE 0 END) as glad_receiving,
+    SUM(CASE WHEN q.transfer_in_line = 'Line 3' THEN 1 ELSE 0 END) as of_line_3,
+    SUM(CASE WHEN q.transfer_in_line = 'Line 4' THEN 1 ELSE 0 END) as of_line_4,
+    SUM(CASE WHEN q.transfer_in_line = 'Line 5' THEN 1 ELSE 0 END) as of_line_5,
+    SUM(CASE WHEN q.transfer_in_line = 'Line 6' THEN 1 ELSE 0 END) as of_line_6,
+    SUM(CASE WHEN q.transfer_in_line = 'Line 7' THEN 1 ELSE 0 END) as of_line_7,
+    SUM(CASE WHEN q.transfer_in_line = 'WHSE 2-BAY 3' THEN 1 ELSE 0 END) as whse_2_bay_3,
+    SUM(CASE WHEN q.transfer_in_line = 'WHSE 2-BAY 2' THEN 1 ELSE 0 END) as whse_2_bay_2,
+    COUNT(q.queue_id) as total,
+    SUM(CASE WHEN q.shift = 'day' THEN 1 ELSE 0 END) as day_shift,
+    SUM(CASE WHEN q.shift = 'night' THEN 1 ELSE 0 END) as night_shift,
+    SUM(CASE WHEN q.shift = 'day/night' THEN 1 ELSE 0 END) as day_night
+FROM arrival a
+INNER JOIN transaction t ON a.transaction_id = t.transaction_id
+INNER JOIN unloading u ON t.transaction_id = u.transaction_id
+LEFT JOIN queue q ON t.transaction_id = q.transaction_id
+WHERE a.arrival_date BETWEEN :dateFrom AND :dateTo
+GROUP BY a.arrival_date
+ORDER BY a.arrival_date DESC;
+";
 
             $stmt = $this->conn->prepare($query);
             $stmt->execute(['dateFrom' => $startDate, 'dateTo' => $endDate]);
@@ -1220,7 +1222,7 @@ ORDER BY transaction.transaction_id DESC";
             }
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
-            $this->sendResponse(false, 'Internal server error');
+            $this->sendResponse(false, 'Internal server error', $e->getMessage());
         }
     }
     public function allReports($data)
