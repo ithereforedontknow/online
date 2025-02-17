@@ -45,7 +45,10 @@ class TransactionManager
     {
         try {
             $this->conn->beginTransaction();
-
+            if (!preg_match('/\d/', $data['to-reference'])) {
+                $this->sendResponse(false, 'TO Reference must contain at least one number');
+                return;
+            }
             // Validate TO Reference
             $stmt = $this->conn->prepare("
                 SELECT 1 FROM transaction 

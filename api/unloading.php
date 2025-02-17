@@ -1,11 +1,14 @@
 <?php
+
+use PhpOffice\PhpSpreadsheet\Shared\TimeZone;
+
 session_start();
 require '../config/connection.php';
 
 // Improved error handling and security
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
-
+date_default_timezone_set('Asia/Manila');
 class unloadingManager
 {
     public $conn;

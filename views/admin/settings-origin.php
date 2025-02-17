@@ -2,7 +2,7 @@
 include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
-    <div class="container">
+    <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="display-5 me-auto fw-bold mb-0">Manage Origin</h1>

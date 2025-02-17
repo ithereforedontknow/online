@@ -46,7 +46,16 @@ $("#reportForm").submit(function (e) {
 
   const dateTo = $("#dateTo").val();
   const dateFrom = $("#dateFrom").val();
-
+  if (!dateTo || !dateFrom) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Please select a valid date range for the report",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    return;
+  }
   if (dateTo < dateFrom) {
     $("#dateTo").addClass("is-invalid");
     return;
@@ -90,12 +99,21 @@ $("#reportForm").submit(function (e) {
   form.submit();
   document.body.removeChild(form);
 });
-
 $("#allReportsForm").submit(function (e) {
   // Debug output
   e.preventDefault();
   const dateTo = $("#dateTo").val();
   const dateFrom = $("#dateFrom").val();
+  if (!dateTo || !dateFrom) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Please select a valid date range for the report",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    return;
+  }
   if (dateTo < dateFrom) {
     $("#dateTo").addClass("is-invalid");
     return;

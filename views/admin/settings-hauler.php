@@ -2,7 +2,7 @@
 include_once('../../includes/header/header-admin.php');
 ?>
 <div class="content" id="content">
-    <div class="container">
+    <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
