@@ -102,13 +102,38 @@ function logout()
 
     sendResponse(true, 'Logged out successfully');
 }
+function forgot_password()
+{
+    global $conn;
 
+    if (!isset($_POST['email'])) {
+        sendResponse(false, 'Missing email');
+    }
+
+    $email = $_POST['email'];
+
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
+    $stmt->execute(['email' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $stmt = $conn->prepare("SELECT email FROM users WHERE userlevel = 'admin'");
+    $stmt->execute();
+    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        sendResponse(false, 'Email not found');
+    }
+    sendResponse(true, 'Email sent successfully', $admin['email']);
+}
 // Handle request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['login'])) {
         login();
     } elseif (isset($_POST['logout'])) {
         logout();
+    } elseif (isset($_POST['forgot_password'])) {
+        forgot_password();
+        sendResponse(false, 'Invalid request');
     } else {
         sendResponse(false, 'Invalid request');
     }

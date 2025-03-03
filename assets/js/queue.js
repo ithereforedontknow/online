@@ -143,9 +143,10 @@ async function sendSms(transaction_id, force = false) {
         },
       });
     } else {
+      console.log(response);
       Swal.fire({
         title: "Error",
-        text: response.data || "Failed to send SMS",
+        text: response.message,
         icon: "error",
         showConfirmButton: false,
         timer: 1500,

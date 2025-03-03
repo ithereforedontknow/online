@@ -43,47 +43,58 @@
                     Dashboard
                 </a>
             </li>
-            <li class="nav-item mb-2">
-                <a href="users.php" class="nav-link text-white">
-                    <i class="fa-solid fa-users fa-lg me-2"></i>
-                    Users
-                </a>
-            </li>
-            <li class="nav-item mb-2">
-                <a href="status.php" class="nav-link text-white">
-                    <i class="fa-solid fa-bars-progress fa-lg me-2"></i>
-                    In Progress
-                </a>
-            </li>
+            <?php if ($_SESSION['userlevel'] == 'admin') { ?>
+                <li class="nav-item mb-2">
+                    <a href="users.php" class="nav-link text-white">
+                        <i class="fa-solid fa-users fa-lg me-2"></i>
+                        Users
+                    </a>
+                </li>
+            <?php } ?>
+            <?php if ($_SESSION['userlevel'] == 'admin' || $_SESSION['userlevel'] == 'traffic(main)') { ?>
+                <li class="nav-item mb-2">
+                    <a href="status.php" class="nav-link text-white">
+                        <i class="fa-solid fa-bars-progress fa-lg me-2"></i>
+                        In Progress
+                    </a>
+                </li>
+            <?php } ?>
             <li class="nav-item mb-2">
                 <a class="nav-link text-white" href="vehicle-transactions.php">
                     <i class="fa-solid fa-scroll fa-lg me-2"></i>
                     Vehicle Transactions
                 </a>
-
             </li>
-            <li class="nav-item mb-2">
-                <a href="queue.php" class="nav-link text-white">
-                    <i class="fa-solid fa-clock fa-lg me-2"></i>
-                    Queue Management
-                </a>
-            </li>
-            <li class="nav-item mb-2">
-                <a href="unloading.php" class="nav-link text-white">
-                    <i class="fa-solid fa-spinner fa-lg me-2"></i> Vehicle Unloading
-                </a>
-            </li>
-            <li class="nav-item mb-2">
-                <a href="finished-transactions.php" class="nav-link text-white">
-                    <i class="fa-solid fa-receipt fa-lg me-2"></i> Finished Transactions
-                </a>
-            </li>
-            <li class="nav-item mb-2">
-                <a href="report-generation.php" class="nav-link text-white">
-                    <i class="fa-solid fa-print fa-lg me-2"></i>
-                    Report Generation
-                </a>
-            </li>
+            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+                <li class="nav-item mb-2">
+                    <a href="queue.php" class="nav-link text-white">
+                        <i class="fa-solid fa-clock fa-lg me-2"></i>
+                        Queue Management
+                    </a>
+                </li>
+            <?php } ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+                <li class="nav-item mb-2">
+                    <a href="unloading.php" class="nav-link text-white">
+                        <i class="fa-solid fa-spinner fa-lg me-2"></i> Vehicle Unloading
+                    </a>
+                </li>
+            <?php } ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+                <li class="nav-item mb-2">
+                    <a href="finished-transactions.php" class="nav-link text-white">
+                        <i class="fa-solid fa-receipt fa-lg me-2"></i> Finished Transactions
+                    </a>
+                </li>
+            <?php } ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+                <li class="nav-item mb-2">
+                    <a href="report-generation.php" class="nav-link text-white">
+                        <i class="fa-solid fa-print fa-lg me-2"></i>
+                        Report Generation
+                    </a>
+                </li>
+            <?php } ?>
             <li class="nav-item mb-2">
                 <a href="settings.php" class="nav-link text-white">
                     <i class="fa-solid fa-gear fa-lg me-2"></i> Settings

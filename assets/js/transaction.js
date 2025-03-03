@@ -252,7 +252,7 @@ $("#add-transaction").submit(async function (e) {
   try {
     await transactionManager.createTransaction(data);
     $("#addTransactionModal").modal("hide");
-    refreshArrivedList();
+    refreshDepartedList();
   } catch (error) {
     console.log(data);
     Swal.fire({
@@ -775,7 +775,6 @@ $("#finished-transaction-form").submit(async function (e) {
       $(`#${validation.id}`).removeClass("is-invalid");
     }
   }
-
   // Collect all form data
   const data = {
     transaction_id: $("#finished-transaction-id").val(),
@@ -992,7 +991,6 @@ async function refreshArrivedList() {
     console.error("Error fetching arrived transactions:", error);
   }
 }
-
 async function refreshTransactionStatus() {
   try {
     const selectedStatus = $("#statusFilter").val();
@@ -1009,6 +1007,7 @@ async function refreshTransactionStatus() {
         arrived: 34,
         queue: 50.5,
         standby: 67,
+        "standby - sms sent": 67,
         ongoing: 83.5,
       };
 
@@ -1029,33 +1028,29 @@ async function refreshTransactionStatus() {
                       <div class="flip-card-inner">
                           <!-- Front of card -->
                           <div class="flip-card-front">
-                              <div class="card shadow-sm mb-4">
-                                  <div class="card-body">
-                                      <h6 class="card-title fw-bold mb-3">Plate Number: ${
-                                        transaction.plate_number
-                                      }</h6>
-                                      <h6 class="card-title fw-bold mb-3">Driver: ${
-                                        transaction.driver_fname
-                                      } ${transaction.driver_lname}</h6>
-                                      <h6 class="card-title fw-bold mb-2">Helper: ${
-                                        transaction.helper_fname
-                                      } ${transaction.helper_lname}</h6>
-                                      <p class="card-text">Status: ${
-                                        transaction.status
-                                      }</p>
-                                      <div class="progress mb-3">
-                                          <div class="progress-bar progress-bar-striped progress-bar-animated ${
-                                            progressValue === 100
-                                              ? "bg-success"
-                                              : "bg-primary"
-                                          }"
-                                              role="progressbar"
-                                              style="width: ${progressValue}%"
-                                              aria-valuenow="${progressValue}"
-                                              aria-valuemin="0"
-                                              aria-valuemax="100">
-                                              ${progressValue}%
-                                          </div>
+                              <div class="shadow-sm rounded p-3 mb-4 bg-white">
+                                  <h6 class="fw-bold mb-3">Plate Number: ${
+                                    transaction.plate_number
+                                  }</h6>
+                                  <h6 class="fw-bold mb-3">Driver: ${
+                                    transaction.driver_fname
+                                  } ${transaction.driver_lname}</h6>
+                                  <h6 class="fw-bold mb-2">Helper: ${
+                                    transaction.helper_fname
+                                  } ${transaction.helper_lname}</h6>
+                                  <p>Status: ${transaction.status}</p>
+                                  <div class="progress mb-3">
+                                      <div class="progress-bar progress-bar-striped progress-bar-animated ${
+                                        progressValue === 100
+                                          ? "bg-success"
+                                          : "bg-primary"
+                                      }"
+                                          role="progressbar"
+                                          style="width: ${progressValue}%"
+                                          aria-valuenow="${progressValue}"
+                                          aria-valuemin="0"
+                                          aria-valuemax="100">
+                                          ${progressValue}%
                                       </div>
                                   </div>
                               </div>
@@ -1063,75 +1058,62 @@ async function refreshTransactionStatus() {
                           
                           <!-- Back of card -->
                           <div class="flip-card-back">
-                              <div class="card shadow-sm">
-                                  <div class="card-body">
-                                      <div class="details-row">
-                                          <span class="details-label">Arrival Time:</span>
-                                          <span>${
-                                            transaction.arrival_time
-                                              ? new Intl.DateTimeFormat(
-                                                  "en-US",
-                                                  {
-                                                    year: "numeric",
-                                                    month: "2-digit",
-                                                    day: "2-digit",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                  }
-                                                ).format(
-                                                  new Date(
-                                                    transaction.arrival_time
-                                                  )
-                                                )
-                                              : "N/A"
-                                          }</span>
-                                      </div>
-                                      <div class="details-row">
-                                          <span class="details-label">Time of Entry (to unload):</span>
-                                          <span>${
-                                            transaction.time_of_entry
-                                              ? new Intl.DateTimeFormat(
-                                                  "en-US",
-                                                  {
-                                                    year: "numeric",
-                                                    month: "2-digit",
-                                                    day: "2-digit",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                  }
-                                                ).format(
-                                                  new Date(
-                                                    transaction.time_of_entry
-                                                  )
-                                                )
-                                              : "N/A"
-                                          }</span>
-                                      </div>
-                                      <div class="details-row">
-                                          <span class="details-label">Ordinal:</span>
-                                          <span>${
-                                            transaction.ordinal || "N/A"
-                                          }</span>
-                                      </div>
-                                      <div class="details-row">
-                                          <span class="details-label">Shift:</span>
-                                          <span>${
-                                            transaction.shift || "N/A"
-                                          }</span>
-                                      </div>
-                                      <div class="details-row">
-                                          <span class="details-label">Schedule:</span>
-                                          <span>${
-                                            transaction.schedule || "N/A"
-                                          }</span>
-                                      </div>
-                                      <div class="details-row">
-                                          <span class="details-label">Transfer in Line:</span>
-                                          <span>${
-                                            transaction.transfer_in_line ||
-                                            "N/A"
-                                          }</span>
-                                      </div>
+                              <div class="shadow-sm rounded p-3 bg-white">
+                                  <div class="details-row">
+                                      <span class="details-label">Arrival Time:</span>
+                                      <span>${
+                                        transaction.arrival_time
+                                          ? new Intl.DateTimeFormat("en-US", {
+                                              year: "numeric",
+                                              month: "2-digit",
+                                              day: "2-digit",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            }).format(
+                                              new Date(transaction.arrival_time)
+                                            )
+                                          : "N/A"
+                                      }</span>
+                                  </div>
+                                  <div class="details-row">
+                                      <span class="details-label">Time of Entry (to unload):</span>
+                                      <span>${
+                                        transaction.time_of_entry
+                                          ? new Intl.DateTimeFormat("en-US", {
+                                              year: "numeric",
+                                              month: "2-digit",
+                                              day: "2-digit",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            }).format(
+                                              new Date(
+                                                transaction.time_of_entry
+                                              )
+                                            )
+                                          : "N/A"
+                                      }</span>
+                                  </div>
+                                  <div class="details-row">
+                                      <span class="details-label">Ordinal:</span>
+                                      <span>${
+                                        transaction.ordinal || "N/A"
+                                      }</span>
+                                  </div>
+                                  <div class="details-row">
+                                      <span class="details-label">Shift:</span>
+                                      <span>${transaction.shift || "N/A"}</span>
+                                  </div>
+                                  <div class="details-row">
+                                      <span class="details-label">Schedule:</span>
+                                      <span>${
+                                        transaction.schedule || "N/A"
+                                      }</span>
+                                  </div>
+                                  <div class="details-row">
+                                      <span class="details-label">Transfer in Line:</span>
+                                      <span>${
+                                        transaction.transfer_in_line || "N/A"
+                                      }</span>
                                   </div>
                               </div>
                           </div>

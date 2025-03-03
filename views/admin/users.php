@@ -16,7 +16,7 @@ include_once('../../includes/header/header-admin.php');
                             </ol>
                         </nav>
                     </div>
-                    <button class="btn btn-primary d-flex align-items-center shadow-sm" data-bs-toggle="offcanvas" data-bs-target="#addUserOffcanvas">
+                    <button class="btn btn-primary d-flex align-items-center shadow-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
                         <i class="fa-solid fa-plus me-2"></i>
                         New User
                     </button>

@@ -328,8 +328,9 @@ class reportManager
                         str_pad($row['transaction_id'], 6, '0', STR_PAD_LEFT) . '-AG',
                         $row['to_reference'],
                         date('m/d', strtotime($row['unloading_date'])),
-                        date('m/d, h:i', strtotime($row['unloading_time_start'])),
-                        date('m/d, h:i', strtotime($row['unloading_time_end'])),
+                        date('m/d, h:i', strtotime($row['unloading_time_start'] ?? '1970-01-01 00:00:00')),
+                        date('m/d, h:i', strtotime($row['unloading_time_end'] ?? '1970-01-01 00:00:00')),
+
                         $row['project_name'],
                         $row['no_of_bales'],
                         $row['no_of_bales'],

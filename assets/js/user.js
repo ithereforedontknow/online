@@ -79,7 +79,7 @@ function openEditUserOffcanvas(user) {
   const editBranchContainer = $("#edit-branch-container");
   editBranchContainer.toggle(user.userlevel === "traffic(branch)");
   document.querySelector("#edit-branch").value = user.branch || "";
-  openOffCanvas("#editUserOffcanvas");
+  $("#editUserModal").modal("show");
 }
 function openOffCanvas(offcanvasId) {
   const offcanvasElement = document.querySelector(offcanvasId);

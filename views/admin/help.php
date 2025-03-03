@@ -4,10 +4,10 @@ include_once('../../includes/header/header-admin.php');
 <div class="content" id="content">
     <div class="container-fluid">
         <input type="text" class="form-control w-25 mb-3" name="search" id="search" placeholder="Search">
-        <a href="api/export_manual.php" target="_blank" class="btn btn-primary" id="exportBtn">Export to PDF</a>
-        <img src="../../assets/img/ULPI_BLUE (1).png" class="mx-auto d-block" alt="" style="width: 500px;">
+        <a href="#" target="_blank" class="btn btn-primary" id="exportBtn">Export to PDF</a>
         <!-- <h1 class="mb-4 text-center">Inhouse Vehicle Management System User Manual</h1> -->
-        <div id="manualContent" class="mt-5">
+        <div id="manualContent">
+            <img src="../../assets/img/ULPI_BLUE (1).png" class="mx-auto d-block" alt="" style="width: 500px;">
             <h2>1. User Management</h2>
             <p>The User Management section allows administrators to manage user accounts within the system.</p>
             <h4>Features:</h4>
@@ -21,8 +21,11 @@ include_once('../../includes/header/header-admin.php');
             <h4>How to use:</h4>
             <ol>
                 <li><strong>View Users</strong>: All users are displayed in a table showing ID, Name, Username, Userlevel, Status, and Action options.</li>
+                <img src="../../assets/img/screenshot/user.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Add New User</strong>: Click the <button class="btn btn-primary">New User</button> button in the top right corner, fill in the required information, and click <button class="btn btn-primary">Save</button></li>
+                <img src="../../assets/img/screenshot/adduser.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Edit User</strong>: Click <button class="btn btn-primary">Edit</button> next to the user, update the info, and click <button class="btn btn-primary">Save</button></li>
+                <img src="../../assets/img/screenshot/edituser.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Activate/Deactivate User</strong>: Click <button class="btn btn-primary">Activate</button> or <button class="btn btn-secondary">Deactivate</button> to change the user's status.</li>
                 <li><strong>Search Users</strong>: Use the search bar at the top of the table to search for users by name.</li>
             </ol>
@@ -33,7 +36,7 @@ include_once('../../includes/header/header-admin.php');
             <p>This section manages transactions for vehicles that have departed and newly arrived.</p>
             <h4>Features:</h4>
             <ul>
-                <li>View all departed transactions</li>
+                <li>View all departed/arrived/cancelled transactions</li>
                 <li>Add new transactions</li>
                 <li>Edit transactions</li>
                 <li>Cancel transactions</li>
@@ -42,11 +45,20 @@ include_once('../../includes/header/header-admin.php');
             <h4>How to use:</h4>
             <ol>
                 <li><strong>View Departed Transactions</strong>: All transactions are displayed in a table.</li>
-                <li><strong>Add New Transaction</strong>: Click <button class="btn btn-primary">New Transaction</button> fill in the form, and click <button class="btn btn-primary">Save</button></li>
+                <img src="../../assets/img/screenshot/vehicletransaction.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>View Arrived Transactions</strong>: All transactions are displayed in a table.</li>
+                <img src="../../assets/img/screenshot/arrivedtransaction.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>View Cancelled Transactions</strong>: All transactions are displayed in a table.</li>
+                <img src="../../assets/img/screenshot/cancelled.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>Add New Transaction</strong>: Click <button class="btn btn-primary">New Transaction</button> fill in the form, and click <button class="btn btn-primary">Add to arrived</button></li>
+                <img src="../../assets/img/screenshot/addtransaction.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Edit Transaction</strong>: Click <button class="btn btn-primary">Edit</button> next to the transaction to update information.</li>
-                <li><strong>Cancel Transaction</strong>: Click <button class="btn btn-secondary">Cancel</button> and confirm.</li>
+                <li><strong>Cancel Transaction</strong>: Click <button class="btn btn-secondary"><i class="fa-solid fa-cancel"></i></button> and confirm.</li>
+                <li><strong>Divert Transaction</strong>: Click <button class="btn btn-secondary"><i class="fa-solid fa-cancel"></i></button> and confirm.</li>
                 <li><strong>Search Transactions</strong>: Use the search bar to find specific transactions.</li>
-                <li><strong>Edit Arrival Time</strong>: Update arrival time and click <button class="btn btn-primary">Save</button></li>
+                <li><strong>Queue Transactions</strong>: Click <button class="btn btn-primary">Queue</button> to add the transaction to the queue.</li>
+                <img src="../../assets/img/screenshot/addqueue.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+
             </ol>
 
             <h2>3. Queue Management</h2>
@@ -54,42 +66,42 @@ include_once('../../includes/header/header-admin.php');
 
             <h4>Features:</h4>
             <ul>
-                <li>View arrived vehicles</li>
-                <li>Add vehicles to the queue</li>
                 <li>Manage the current queue</li>
                 <li>Filter the queue</li>
+                <li>Send SMS</li>
             </ul>
 
             <h4>How to Use:</h4>
             <ol>
-                <li><strong>View Arrived Vehicles:</strong> Vehicles not yet in the queue are shown in the left column.</li>
+                <li><strong>View Queued Vehicles:</strong></li>
                 <li><strong>Manage Queue:</strong>
                     <ul>
-                        <li>The current queue is displayed in the right column.</li>
                         <li>Use filter options such as Ordinal, Shift, Schedule, and Line to refine the queue.</li>
                     </ul>
                 </li>
+                <img src="../../assets/img/screenshot/queue.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>View Queue Details:</strong> Click on a vehicle in the queue to view more information.</li>
-                <li><strong>Search Queue:</strong> Use the search bar to find specific vehicles in the queue.</li>
-                <li><strong>View Queue on TV Display:</strong> Click the <button class="btn btn-primary">View (TV)</button> button for a large screen display format of the queue.</li>
+                <img src="../../assets/img/screenshot/editqueue.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>View Queue on TV Display:</strong> Click the <button class="btn btn-primary">Present Screen</button> button for a large screen display format of the queue.</li>
+                <li><strong>Send SMS and Enter vehicle:</strong> Click the <button class="btn btn-primary"><i class="fa-solid fa-sms"></i></button> button to send SMS and <button class="btn btn-primary">Set</button> to Set time of entry.</li>
+                <img src="../../assets/img/screenshot/to enter.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+
             </ol>
-
-
             <h2>4. Unloading Vehicles</h2>
             <p>The Unloading Vehicles section allows users to manage and track vehicles currently in the unloading process.</p>
             <h4>Features:</h4>
             <ul>
                 <li>View all vehicles in the unloading process</li>
-                <li>Update unloading start and end times</li>
-                <li>Record time of departure</li>
-                <li>Track time spent in waiting area and demurrage</li>
+                <li>Update unloading start and end times, and time of departure</li>
             </ul>
             <h4>How to use:</h4>
             <ol>
                 <li><strong>View Unloading Vehicles</strong>: All vehicles in the unloading process are displayed in a table.</li>
-                <li><strong>Update Unloading Start Time</strong>: Set the unloading start time and click <button class="btn btn-primary">Save</button></li>
-                <li><strong>Update Unloading End Time</strong>: Set the unloading end time and click <button class="btn btn-primary">Save</button></li>
-                <li><strong>Record Time of Departure</strong>: Set the departure time and click <button class="btn btn-primary">Done</button></li>
+                <img src="../../assets/img/screenshot/viewunloading.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>Add Unloading Start Time, End Time, and Time of departure</strong>: Click the <button class="btn btn-primary">Set Time</button> button</li>
+                <img src="../../assets/img/screenshot/unloading.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>Update Unloading Start Time, End Time, and Time of departure</strong>: Click the <button class="btn btn-primary">Edit</button> button</li>
+                <img src="../../assets/img/screenshot/editunloading.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Search Transactions</strong>: Use the search bar to find specific transactions.</li>
             </ol>
 
@@ -101,15 +113,18 @@ include_once('../../includes/header/header-admin.php');
                 <li>Update transfer out net weight</li>
                 <li>Record scrap weight</li>
                 <li>Add remarks</li>
+                <li>Update finished transaction</li>
                 <li>Search transactions</li>
             </ul>
             <h4>How to use:</h4>
             <ol>
                 <li><strong>View Finished Transactions</strong>: Completed transactions are listed in a table.</li>
-                <li><strong>Update Transfer Out Net Weight</strong>: Enter the transfer out weight and click <button class="btn btn-primary">Save</button></li>
-                <li><strong>Record Scrap Weight</strong>: Enter the scrap weight and click <button class="btn btn-primary">Save</button></li>
-                <li><strong>Add Remarks</strong>: Enter remarks and click <button class="btn btn-primary">Save</button></li>
+                <img src="../../assets/img/screenshot/finished.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>Record Transfer Out Net Weight and Scrap Weight then Add Remarks</strong>: Enter the transfer out net weight, scrap, and remarks and click <button class="btn btn-primary">Save</button></li>
                 <li><strong>Search Transactions</strong>: Use the search bar to find finished transactions.</li>
+                <li><strong>Update finished transaction</strong>: Click <button class="btn btn-primary">Edit</button> then enter the required fields</li>
+                <img src="../../assets/img/screenshot/editfinished.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+
             </ol>
 
             <h2>6. User Profile</h2>
@@ -123,7 +138,9 @@ include_once('../../includes/header/header-admin.php');
             <h4>How to use:</h4>
             <ol>
                 <li><strong>View Profile Information</strong>: User ID, username, and user level are displayed.</li>
-                <li><strong>Edit Personal Details</strong>: Update your first, middle, and last names.</li>
+                <img src="../../assets/img/screenshot/profile.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+
+                <li><strong>Edit Personal Details</strong>: Update your username, first, middle and last names, and email.</li>
                 <li><strong>Change Password</strong>: Enter and confirm a new password, then click <button class="btn btn-primary">Change Password</button></li>
             </ol>
 
@@ -133,24 +150,30 @@ include_once('../../includes/header/header-admin.php');
             <ul>
                 <li><strong>Transaction Reports:</strong>
                     <ul>
+                        <li>Reports</li>
                         <li>Tally In</li>
                         <li>Daily Unloading</li>
-                        <li>Order of Entry</li>
                         <li>Summary</li>
+                        <li>Demurrage</li>
+                        <li>Diverted</li>
                     </ul>
                 </li>
-                <li><strong>Extra Reports:</strong>
+                <li><strong>Extra Reports (Logs):</strong>
                     <ul>
-                        <li>Users</li>
+                        <li>Settings</li>
+                        <li>SMS</li>
+                        <li>Event</li>
                     </ul>
                 </li>
             </ul>
             <h4>How to generate a report:</h4>
             <ol>
+                <li><strong>Set parameters or date ranges</strong>.</li>
+                <img src="../../assets/img/screenshot/reportgen.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Click on the desired report</strong>.</li>
-                <li><strong>Set parameters or date ranges</strong> if needed.</li>
-                <li><strong>Click <button class="btn btn-primary">Export to Excel</button></strong></li>
-                <li><strong>Or Click <button class="btn btn-primary">Export to PDF</button></strong></li>
+                <img src="../../assets/img/screenshot/report.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
+                <li><strong>Click <button class="btn btn-primary">Export to Excel</button></strong> <strong>Or Click <button class="btn btn-primary">Export to PDF</button></strong></li>
+                <img src="../../assets/img/screenshot/reportpre.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
             </ol>
 
             <h2>8. Settings</h2>
@@ -203,10 +226,15 @@ include_once('../../includes/header/header-admin.php');
 
             <h4>How to use Settings:</h4>
             <ol>
+                <img src="../../assets/img/screenshot/settings.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Click on the desired setting category</strong>.</li>
+                <img src="../../assets/img/screenshot/settingspre.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Add new entries</strong> or edit existing ones.</li>
+                <img src="../../assets/img/screenshot/settingsadd.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Save changes</strong> after making modifications.</li>
+                <img src="../../assets/img/screenshot/settingsedit.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
                 <li><strong>Follow on-screen instructions</strong> for Backup & Restore.</li>
+                <img src="../../assets/img/screenshot/backup.png" class="my-3 mx-auto d-block" alt="" style="width: 500px;">
             </ol>
 
             <p>For further assistance, contact your system administrator or IT support team.</p>
@@ -218,8 +246,47 @@ include_once('../../includes/header/header-admin.php');
 include_once('../../includes/footer/footer-admin.php');
 ?>
 <script src="../../assets/js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Handle the export button click
+        $("#exportBtn").click(function(e) {
+            e.preventDefault(); // Prevent default anchor behavior
+
+            // Get the content element
+            const element = document.getElementById('manualContent');
+
+            // Set the PDF options
+            const options = {
+                margin: 10,
+                filename: 'vehicle-management-system-manual.pdf',
+                image: {
+                    type: 'jpeg',
+                    quality: 0.98
+                },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                }
+            };
+
+            // Show a loading message
+            const loadingMessage = $('<div class="alert alert-info text-center" role="alert">Generating PDF, please wait...</div>');
+            $('#content').prepend(loadingMessage);
+
+            // Use html2pdf to generate and download the PDF
+            html2pdf().from(element).set(options).save().then(function() {
+                // Remove the loading message after PDF is generated
+                loadingMessage.remove();
+            });
+        });
+
+        // Your existing search functionality
         $("#search").keyup(function() {
             var searchText = $(this).val().toLowerCase();
             $("#manualContent *").each(function() {

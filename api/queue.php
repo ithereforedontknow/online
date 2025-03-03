@@ -3,8 +3,6 @@ session_start();
 require '../config/connection.php';
 require_once('../vendor/autoload.php');
 
-use Semaphore\SemaphoreClient;
-
 // Improved error handling and security
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');

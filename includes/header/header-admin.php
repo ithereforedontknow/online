@@ -2,8 +2,9 @@
 require_once '../../config/connection.php';
 session_start();
 if (!isset($_SESSION['id']) || $_SESSION['userlevel'] !== 'admin') {
-    header('Location: ../index.php');
+    header('Location: ../../index.php');
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -12,7 +13,7 @@ if (!isset($_SESSION['id']) || $_SESSION['userlevel'] !== 'admin') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin</title>
+    <title>Vehicle Management</title>
     <link rel="stylesheet" href="../../public/css/bootstrap.min.css">
     <link rel="stylesheet" href="../../public/css/datatables.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">

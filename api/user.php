@@ -210,6 +210,9 @@ class UserManager
 
             $this->sendResponse(true, 'Profile updated successfully');
         } catch (Exception $e) {
+            // Log the error (in a production environment, log to a file)
+            error_log('Database error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Error updating profile');
         }
     }
 }
