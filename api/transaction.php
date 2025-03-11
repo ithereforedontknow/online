@@ -741,31 +741,24 @@ class TransactionManager
             $stmt->execute(['id' => $data['transaction_id']]);
             $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            try {
-                if ($data['set_available'] === 'true') {
-                    $stmt = $this->conn->prepare("UPDATE vehicle SET status = :status WHERE vehicle_id = :id");
-                    $stmt->execute([
-                        ':status' => '1',
-                        ':id' => $transaction['vehicle_id']
-                    ]);
+            if ($data['set_available'] === 'true') {
+                $stmt = $this->conn->prepare("UPDATE vehicle SET status = :status WHERE vehicle_id = :id");
+                $stmt->execute([
+                    ':status' => '1',
+                    ':id' => $transaction['vehicle_id']
+                ]);
 
-                    $stmt = $this->conn->prepare("UPDATE driver SET status = :status WHERE driver_id = :id");
-                    $stmt->execute([
-                        ':status' => '1',
-                        ':id' => $transaction['driver_id']
-                    ]);
+                $stmt = $this->conn->prepare("UPDATE driver SET status = :status WHERE driver_id = :id");
+                $stmt->execute([
+                    ':status' => '1',
+                    ':id' => $transaction['driver_id']
+                ]);
 
-                    $stmt = $this->conn->prepare("UPDATE helper SET status = :status WHERE helper_id = :id");
-                    $stmt->execute([
-                        ':status' => '1',
-                        ':id' => $transaction['helper_id']
-                    ]);
-
-                    return $this->sendResponse(true, 'Status updated successfully');
-                }
-            } catch (PDOException $e) {
-                error_log('Database error: ' . $e->getMessage());
-                return $this->sendResponse(false, 'Error updating status', $e->getMessage());
+                $stmt = $this->conn->prepare("UPDATE helper SET status = :status WHERE helper_id = :id");
+                $stmt->execute([
+                    ':status' => '1',
+                    ':id' => $transaction['helper_id']
+                ]);
             }
 
             $stmt = $this->conn->prepare("INSERT INTO diverted (transaction_id, to_reference, new_destination, remarks) VALUES (:id, :to_reference, :new_destination, :remarks)");
@@ -780,7 +773,7 @@ class TransactionManager
             $stmt->execute([
                 ':id' => $data['transaction_id'],
                 ':created_by' => $_SESSION['username'],
-                ':details' => $data['to_reference'] . 'Transaction diverted to ' . $data['origin_id'] . ' by ' . $_SESSION['username']
+                ':details' => $data['to_reference'] . ' Transaction diverted' . ' by ' . $_SESSION['username']
             ]);
 
             return $this->sendResponse(true, 'Transaction diverted successfully');

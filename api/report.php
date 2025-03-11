@@ -2668,7 +2668,7 @@ ORDER BY transaction.transaction_id DESC";
                 $headers = [
                     'Settings Name',
                     'Details',
-                    'Created By',
+                    'Attempts',
                     'Created At'
                 ];
 

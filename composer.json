@@ -1,7 +1,6 @@
 {
   "require": {
     "phpoffice/phpspreadsheet": "^3.8",
-    "tecnickcom/tcpdf": "^6.8",
-    "kickstartph/semaphore-client": "^0.2.0"
+    "tecnickcom/tcpdf": "^6.8"
   }
 }

@@ -40,7 +40,7 @@ session_start();
         </div>
 
         <style>
-            .flip-forever {
+            /* .flip-forever {
                 animation: flip 3s ease-in-out infinite;
             }
 
@@ -52,7 +52,7 @@ session_start();
                 100% {
                     transform: rotateY(360deg);
                 }
-            }
+            } */
         </style>
 
 

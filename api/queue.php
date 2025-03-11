@@ -1,7 +1,10 @@
 <?php
 session_start();
 require '../config/connection.php';
-require_once('../vendor/autoload.php');
+
+require '../vendor/autoload.php';
+
+
 
 // Improved error handling and security
 header('Content-Type: application/json');
@@ -428,10 +431,32 @@ class queueManager
 
             // Send SMS via Semaphore API
             $apiKey = "6c557df5b5cfb79a20287af09f6f85af"; // Replace with your API key
-            $smsResponse = $this->send_sms($apiKey, $driver['driver_phone'], $message);
+            $url = "https://semaphore.co/api/v4/messages";
 
-            if (!$smsResponse) {
-                $this->sendResponse(false, "Failed to send SMS");
+            $url = 'https://api.semaphore.co/api/v4/messages';
+            $number = $driver['driver_phone'];
+
+            try {
+                $data = [
+                    'apikey' => $apiKey,
+                    'number' => $number,
+                    'message' => $message,
+                    'sendername' => 'PUVFMS'
+                ];
+
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+
+                $response = curl_exec($ch);
+                if ($response === false) {
+                    throw new Exception('Curl error: ' . curl_error($ch));
+                }
+                curl_close($ch);
+            } catch (Exception $e) {
+                error_log('Error sending SMS: ' . $e->getMessage());
+                $this->sendResponse(false, 'Failed to send SMS', $e->getMessage());
                 return;
             }
 
@@ -474,34 +499,6 @@ class queueManager
         } catch (PDOException $e) {
             error_log('Error sending SMS: ' . $e->getMessage());
             $this->sendResponse(false, 'Error sending SMS');
-        }
-    }
-
-    // Function to send SMS via Semaphore API
-    private function send_sms($api_key, $number, $message)
-    {
-        $url = "https://api.semaphore.co/api/v4/messages";
-
-        $data = [
-            'apikey' => $api_key,
-            'number' => $number,
-            'message' => $message,
-            'sendername' => 'PUVFMS' // Optional: Replace with your registered sender name
-        ];
-
-        try {
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-            $response = curl_exec($ch);
-            curl_close($ch);
-
-            return json_decode($response, true); // Return API response as an array
-        } catch (Exception $e) {
-            error_log('Error sending SMS via Semaphore API: ' . $e->getMessage());
-            return false;
         }
     }
 }
