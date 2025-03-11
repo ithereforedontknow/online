@@ -1,7 +1,10 @@
 <?php
 session_start();
 require '../config/connection.php';
-require_once('../vendor/autoload.php');
+
+require '../vendor/autoload.php';
+
+
 
 // Improved error handling and security
 header('Content-Type: application/json');
@@ -116,35 +119,26 @@ class queueManager
             $this->sendResponse(false, 'Error adding transaction');
         }
     }
-    public function addToQueue($transaction_id, $transfer_in_line, $ordinal, $shift, $schedule, $queue_number, $priority)
+    public function addToQueue($transaction_id, $transfer_in_line, $ordinal, $shift, $schedule, $priority)
     {
         try {
-            $currentDate = date('Y-m-d');
-            $existingQueueNumberQuery = "SELECT * 
-                                FROM queue  
-                                WHERE queue_number = :queue_number 
-                                AND created_at > :current_date";
-            $stmt = $this->conn->prepare($existingQueueNumberQuery);
-            $stmt->execute([
-                ':queue_number' => $queue_number,
-                ':current_date' => $currentDate
-            ]);
+            $stmt = $this->conn->prepare("SELECT COUNT(*) AS queue_number
+FROM queue
+WHERE DATE(created_at) = CURDATE()
+");
+            $stmt->execute();
+            $queue_number = $stmt->fetchColumn();
+            $queue_number = $queue_number + 1;
 
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            if (count($result) > 0) {
-                $this->sendResponse(false, 'Queue number is already in use');
-                exit;
-            }
-
-            $stmt = $this->conn->prepare("INSERT INTO queue (transaction_id, transfer_in_line, ordinal, shift, schedule, queue_number, priority) VALUES (:transaction_id, :transfer_in_line, :ordinal, :shift, :schedule, :queue_number, :priority)");
+            $stmt = $this->conn->prepare("INSERT INTO queue (transaction_id, transfer_in_line, ordinal, shift, schedule, priority, queue_number) VALUES (:transaction_id, :transfer_in_line, :ordinal, :shift, :schedule, :priority, :queue_number)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
                 ':transfer_in_line' => $transfer_in_line,
                 ':ordinal' => $ordinal,
                 ':shift' => $shift,
                 ':schedule' => $schedule,
-                ':queue_number' => $queue_number,
-                ':priority' => $priority
+                ':priority' => $priority,
+                ':queue_number' => $queue_number
             ]);
             $stmt = $this->conn->prepare("UPDATE transaction SET status = 'queue' WHERE transaction_id = :transaction_id");
             $stmt->execute([
@@ -167,7 +161,7 @@ class queueManager
             $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
-                ':details' => $to_reference . ' Transaction added to queue by ' . $created_by . ' with transfer in line ' . $transfer_in_line . ', ordinal ' . $ordinal . ', shift ' . $shift . ', schedule ' . $schedule . ', queue number ' . $queue_number . ', and priority ' . $priority,
+                ':details' => $to_reference . ' Transaction added to queue by ' . $created_by . ' with transfer in line ' . $transfer_in_line . ', ordinal ' . $ordinal . ', shift ' . $shift . ', schedule ' . $schedule .  ', and priority ' . $priority . ', and queue number ' . $queue_number,
                 ':created_by' => $created_by
             ]);
             $this->sendResponse(true, 'Transaction added to queue successfully');
@@ -283,6 +277,25 @@ class queueManager
     public function timeOfEntry($transaction_id, $time_of_entry)
     {
         try {
+            $query = "SELECT transfer_in_line FROM queue WHERE transaction_id = :transaction_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':transaction_id' => $transaction_id]);
+            $transfer_in_line = $stmt->fetchColumn();
+
+            $query = "SELECT COUNT(*) as count 
+                      FROM queue 
+                      INNER JOIN transaction ON transaction.transaction_id = queue.transaction_id 
+                      WHERE transfer_in_line = :transfer_in_line 
+                      AND transaction.status = 'ongoing'";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':transfer_in_line' => $transfer_in_line]);
+            $countResult = $stmt->fetch(PDO::FETCH_ASSOC);
+            $transferInLineCount = $countResult['count'];
+
+            if ($transferInLineCount >= 3) {
+                $this->sendResponse(false, 'Transfer in line is full. Maximum of 3 allowed');
+                exit;
+            }
             $stmt = $this->conn->prepare("SELECT arrival_time FROM arrival WHERE transaction_id = :transaction_id");
             $stmt->execute([
                 ':transaction_id' => $transaction_id
@@ -428,10 +441,32 @@ class queueManager
 
             // Send SMS via Semaphore API
             $apiKey = "6c557df5b5cfb79a20287af09f6f85af"; // Replace with your API key
-            $smsResponse = $this->send_sms($apiKey, $driver['driver_phone'], $message);
+            $url = "https://semaphore.co/api/v4/messages";
 
-            if (!$smsResponse) {
-                $this->sendResponse(false, "Failed to send SMS");
+            $url = 'https://api.semaphore.co/api/v4/messages';
+            $number = $driver['driver_phone'];
+
+            try {
+                $data = [
+                    'apikey' => $apiKey,
+                    'number' => $number,
+                    'message' => $message,
+                    'sendername' => 'PUVFMS'
+                ];
+
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+
+                $response = curl_exec($ch);
+                if ($response === false) {
+                    throw new Exception('Curl error: ' . curl_error($ch));
+                }
+                curl_close($ch);
+            } catch (Exception $e) {
+                error_log('Error sending SMS: ' . $e->getMessage());
+                $this->sendResponse(false, 'Failed to send SMS', $e->getMessage());
                 return;
             }
 
@@ -476,34 +511,6 @@ class queueManager
             $this->sendResponse(false, 'Error sending SMS');
         }
     }
-
-    // Function to send SMS via Semaphore API
-    private function send_sms($api_key, $number, $message)
-    {
-        $url = "https://api.semaphore.co/api/v4/messages";
-
-        $data = [
-            'apikey' => $api_key,
-            'number' => $number,
-            'message' => $message,
-            'sendername' => 'PUVFMS' // Optional: Replace with your registered sender name
-        ];
-
-        try {
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-            $response = curl_exec($ch);
-            curl_close($ch);
-
-            return json_decode($response, true); // Return API response as an array
-        } catch (Exception $e) {
-            error_log('Error sending SMS via Semaphore API: ' . $e->getMessage());
-            return false;
-        }
-    }
 }
 
 // Main API Handler
@@ -534,10 +541,9 @@ try {
                 $ordinal = $_POST['ordinal'] ?? null;
                 $shift = $_POST['shift'] ?? null;
                 $schedule = $_POST['schedule'] ?? null;
-                $queue_number = $_POST['queue_number'] ?? null;
                 $priority = $_POST['priority'] ?? null;
                 if ($transaction_id) {
-                    $queueManager->addToQueue($transaction_id, $transfer_in_line, $ordinal, $shift, $schedule, $queue_number, $priority);
+                    $queueManager->addToQueue($transaction_id, $transfer_in_line, $ordinal, $shift, $schedule, $priority);
                 } else {
                     $queueManager->sendResponse(false, 'Missing transaction ID');
                 }

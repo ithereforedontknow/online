@@ -213,11 +213,7 @@ include_once('../../includes/header/header-admin.php');
                         </select>
                         <label for="add-queue-schedule" class="form-label">Schedule</label>
                     </div>
-                    <div class="form-floating mb-4">
-                        <input type="text" class="form-control" id="add-queue-number" name="add-queue-number" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
-                        <label for="add-queue-number" class="form-label">Vehicle Pass</label>
-                        <div class="invalid-feedback">Vehicle Pass already exist.</div>
-                    </div>
+
                     <div class="form-floating">
                         <select name="add-queue-priority" class="form-select" id="add-queue-priority">
                             <option value="1">Priority</option>

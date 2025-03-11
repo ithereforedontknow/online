@@ -12,7 +12,7 @@ $stmtTransaction = $conn->prepare("SELECT count(*) FROM transaction");
 $stmtTransaction->execute();
 $Transaction = $stmtTransaction->fetch(PDO::FETCH_ASSOC);
 
-$activeTransactions = $conn->prepare("SELECT count(*) FROM transaction where transaction.status = 'ongoing' || transaction.status = 'queue' || transaction.status = 'departed' || transaction.status = 'standby'");
+$activeTransactions = $conn->prepare("SELECT count(*) FROM transaction where transaction.status = 'ongoing' || transaction.status = 'queue' || transaction.status = 'departed' || transaction.status = 'standby' || transaction.status = 'standby - sms sent'");
 $activeTransactions->execute();
 $Active = $activeTransactions->fetch(PDO::FETCH_ASSOC);
 
@@ -20,11 +20,11 @@ $vehiclesTransit = $conn->prepare("SELECT count(*) FROM transaction where transa
 $vehiclesTransit->execute();
 $Transit = $vehiclesTransit->fetch(PDO::FETCH_ASSOC);
 
-$stmtQueue = $conn->prepare("SELECT count(*) FROM queue inner join transaction on queue.transaction_id = transaction.transaction_id where status = 'queue'");
+$stmtQueue = $conn->prepare("SELECT count(*) FROM queue inner join transaction on queue.transaction_id = transaction.transaction_id where transaction.status = 'queue'");
 $stmtQueue->execute();
 $queue = $stmtQueue->fetch(PDO::FETCH_ASSOC);
 
-$stmtUnloading = $conn->prepare("SELECT count(*) FROM unloading inner join transaction on unloading.transaction_id = transaction.transaction_id where status = 'unloading'");
+$stmtUnloading = $conn->prepare("SELECT count(*) FROM unloading inner join transaction on unloading.transaction_id = transaction.transaction_id where transaction.status = 'ongoing'");
 $stmtUnloading->execute();
 $unloading = $stmtUnloading->fetch(PDO::FETCH_ASSOC);
 ?>

@@ -1,255 +1,318 @@
 <?php
 include_once('../../includes/header/header-branch.php');
+$stmt = $conn->prepare("SELECT DISTINCT truck_type FROM Vehicle");
+$stmt->execute();
+$truckTypes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+$origin = $row['branch'];
+$stmtDemurrage = $conn->prepare("SELECT demurrage FROM demurrage ORDER BY updated_at DESC LIMIT 1");
+$stmtDemurrage->execute();
+$demurrage = $stmtDemurrage->fetch(PDO::FETCH_ASSOC);
+
+$stmtTransaction = $conn->prepare("SELECT count(*) FROM transaction where transaction.origin_id = '$origin'");
+$stmtTransaction->execute();
+$Transaction = $stmtTransaction->fetch(PDO::FETCH_ASSOC);
+
+$activeTransactions = $conn->prepare("SELECT count(*) FROM transaction where transaction.status != 'done' && transaction.origin_id = '$origin'");
+$activeTransactions->execute();
+$Active = $activeTransactions->fetch(PDO::FETCH_ASSOC);
+
+$vehiclesTransit = $conn->prepare("SELECT count(*) FROM transaction where transaction.status = 'departed' && transaction.origin_id = '$origin'");
+$vehiclesTransit->execute();
+$Transit = $vehiclesTransit->fetch(PDO::FETCH_ASSOC);
+
+$stmtQueue = $conn->prepare("SELECT count(*) FROM queue inner join transaction on queue.transaction_id = transaction.transaction_id where status = 'queue' && transaction.origin_id = '$origin'");
+$stmtQueue->execute();
+$queue = $stmtQueue->fetch(PDO::FETCH_ASSOC);
+
+$stmtUnloading = $conn->prepare("SELECT count(*) FROM unloading inner join transaction on unloading.transaction_id = transaction.transaction_id where status = 'unloading' && transaction.origin_id = '$origin'");
+$stmtUnloading->execute();
+$unloading = $stmtUnloading->fetch(PDO::FETCH_ASSOC);
 ?>
-<div class="content1" id="content">
-    <input type="hidden" id="branchName" value="<?= $row['branch'] ?>">
-    <div class="container p-5">
-        <h1 class="display-5 mb-3 fw-bold">Transaction Form</h1>
-        <form id="add-branch-transaction">
-            <div class="row">
-                <div class="col">
-                    <div class="form-floating mb-4">
-                        <?php
-                        // Fetch the branch from the current user's record
-                        $stmt = $conn->prepare("SELECT `branch` FROM `users` WHERE `id` = :userId");
-                        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-                        $stmt->execute();
-                        $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                        // Fetch the origin code based on the branch
-                        $stmt = $conn->prepare("SELECT origin_code FROM origin WHERE origin_id = :branch");
-                        $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
-                        $stmt->execute();
-                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                        $originCode = $row['origin_code'];
-                        ?>
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="add-to-reference"
-                            name="add-to-reference"
-                            required
-                            maxlength="13"
-                            pattern="^\d+(-[A-Z0-9]+)?$"
-                            oninput="this.value = this.value.replace(/[^0-9-]/g, '');">
-                        <label for="add-to-reference" class="form-label">TO Reference #</label>
-                        <div class="invalid-feedback">TO Reference format should be numbers only with "-<?= $originCode ?>" suffix</div>
-                    </div>
-
-                    <script>
-                        document.getElementById('add-to-reference').addEventListener('blur', function(event) {
-                            const originCode = '<?= $originCode ?>';
-                            let value = this.value.toUpperCase();
-
-                            // Remove any non-numeric characters except hyphen
-                            value = value.replace(/[^0-9-]/g, '');
-
-                            // Remove existing origin code suffix if present
-                            if (value.endsWith(`-${originCode}`)) {
-                                value = value.replace(`-${originCode}`, '');
-                            }
-
-                            // Remove any other hyphens in the number portion
-                            value = value.replace(/-/g, '');
-
-                            // Add the origin code suffix
-                            this.value = value + `-${originCode}`;
-                        });
-
-                        // Add input validation
-                        document.getElementById('add-to-reference').addEventListener('input', function(event) {
-                            // Remove any non-numeric characters as they're typed
-                            let value = this.value.replace(/[^0-9-]/g, '');
-
-                            // Update the input value
-                            this.value = value;
-                        });
-                    </script>
-
-                    <div class="form-floating mb-4">
-                        <input type="text" class="form-control" id="add-guia" name="add-guia" required oninput="this.value = this.value.toUpperCase();">
-                        <label for="add-guia" class="form-label">GUIA</label>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <input list="add-haulers" class="form-control" name="add-hauler" id="add-hauler" required autocomplete="off">
-                        <label for="add-haulers">Hauler</label>
-                        <datalist id="add-haulers">
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM `hauler` WHERE `branch` = :branch");
-                            $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_STR);
-                            $stmt->execute();
-                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['hauler_name'] . '" data-id="' . $row['hauler_id'] . '"></option>';
-                            }
-                            ?>
-                        </datalist>
-                        <div class="invalid-feedback">Hauler does not exist</div>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <input list="add-plate-numbers" class="form-control" name="add-plate-number" id="add-plate-number" required autocomplete="off">
-                        <label for="add-plate-numbers">Plate Number and Truck Type</label>
-                        <datalist id="add-plate-numbers">
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM vehicle INNER JOIN hauler on vehicle.hauler_id = hauler.hauler_id WHERE hauler.branch = :branch AND vehicle.status = '1'");
-                            $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
-                            $stmt->execute();
-                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['plate_number'] . ' : ' . $row['truck_type'] . '" data-id="' . $row['vehicle_id'] . '"></option>';
-                            }
-                            ?>
-                        </datalist>
-                        <div class="invalid-feedback">Plate Number does not exist</div>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <input list="add-driver-names" class="form-control" name="add-driver-name" id="add-driver-name" required autocomplete="off">
-                        <label for="add-driver-names">Driver Name</label>
-                        <datalist id="add-driver-names">
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM `driver` INNER JOIN hauler ON driver.hauler_id = hauler.hauler_id where hauler.branch = :branch and driver.status = '1'");
-                            $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
-
-                            $stmt->execute();
-                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['driver_fname'] . ' ' . $row['driver_lname'] . '" data-id="' . $row['driver_id'] . '"></option>';
-                            }
-                            ?>
-                        </datalist>
-                        <div class="invalid-feedback">Driver currently in transaction</div>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <input list="add-helper-names" class="form-control" name="add-helper-name" id="add-helper-name" required autocomplete="off">
-                        <label for="add-helper-names">Helper Name</label>
-                        <datalist id="add-helper-names">
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM `helper` INNER JOIN hauler ON helper.hauler_id = hauler.hauler_id where hauler.branch = :branch and helper.status = '1'");
-                            $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
-                            $stmt->execute();
-                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['helper_fname'] . '  ' . $row['helper_lname'] . '" data-id="' . $row['helper_id'] . '"></option>';
-                            }
-                            ?>
-                        </datalist>
-                        <div class="invalid-feedback">Helper currently in transaction</div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="form-floating mb-4">
-                        <select class="form-select" name="add-project" id="add-project" required>
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM `project`");
-                            $stmt->execute();
-                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['project_id'] . '">' . $row['project_name'] . '</option>';
-                            }
-                            ?>
-                        </select>
-                        <label for="add-project">Project</label>
-                    </div>
-
-                    <div class="form-floating mb-4">
-                        <input type="text" class="form-control" id="add-no-of-bales" name="add-no-of-bales" required>
-                        <label for="add-no-of-bales" class="form-label">No of Bales (kg)</label>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <input type="text" class="form-control" id="add-kilos" name="add-kilos" required>
-                        <label for="add-kilos" class="form-label">Kilos</label>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <select name="add-origin" id="add-origin_id" class="form-select" required>
-                            <?php
-                            $stmt = $conn->prepare("SELECT * FROM `origin` WHERE `origin_id` = :branch");
-                            $stmt->bindParam(':branch', $userRow['branch'], PDO::PARAM_INT);
-                            $stmt->execute();
-
-                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                echo '<option value="' . $row['origin_id'] . '">' . $row['origin_name'] . '</option>';
-                            }
-                            ?>
-                        </select>
-                        <label for="add-origin" class="form-label">Origin</label>
-                    </div>
-                    <div class="form-floating mb-4">
-                        <input type="datetime-local" class="form-control" name="add-time-departure" id="add-time-departure" required>
-                        <label for="add-time-departure" class="form-label">Time Of Departure</label>
-                        <div class="invalid-feedback">Time of Departure cannot be in the past.</div>
-                    </div>
-                    <input type="hidden" class="form-control" id="add-created_by" name="add-created_by" value="<?= $_SESSION['username']; ?>">
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-primary float-end">Save</button>
-                    <button type="button" class="btn btn-secondary float-end me-2" id="add-clear">Clear</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-<div class="modal fade" id="help-modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-1" id="exampleModalLabel">Help</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h2>Adding Transactions:</h2>
-                <ol>
-                    <li>Enter the transaction details, including vehicle information, date, and any relevant notes.</li>
-                    <li> Click <button class="btn btn-primary">Save</button></li>
-                </ol>
-                <h2>Editing Profile:</h2>
-                <ol>
-                    <li>
-                        Enter your <strong>Username</strong>. This is how others will identify you on the platform.
-                    </li>
-                    <li>
-                        Fill in your <strong>First Name</strong>, <strong>Middle Name</strong>, and <strong>Last Name</strong>. Make sure all names are spelled correctly.
-                    </li>
-                    <li>
-                        Enter a <strong>New Password</strong> that meets security requirements (at least 8 characters, including upper/lowercase and numbers).
-                    </li>
-                    <li>
-                        Confirm your new password by re-entering it in the <strong>Confirm New Password</strong> field.
-                    </li>
-                    <li>
-                        Click the <button class="btn btn-primary">Change Password</button> button to save your changes. If any validation fails, appropriate messages will guide you to correct the entries.
-                    </li>
-                </ol>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+<div class="content bg-light" id="content">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="display-5 me-auto fw-bold mb-0">Dashboard</h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+              </ol>
+            </nav>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-secondary">Logged in as <?php echo $_SESSION['userlevel']; ?></span>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-<div class="offcanvas offcanvas-end" tabindex="-1" id="viewNotificationsOffcanvas" aria-labelledby="viewNotificationsOffcanvasLabel">
-    <div class="offcanvas-header border-bottom">
-        <div class="d-flex">
-            <h5 class="offcanvas-title me-2" id="viewNotificationsOffcanvasLabel">
-                Notifications
-                <span class="text-muted small ms-2" id="notificationTotalCount"></span>
-            </h5>
-            <form id="notificationSearchForm" class="me-2">
-                <div class="input-group input-group-sm">
-                    <input
-                        type="search"
-                        id="notificationSearchInput"
-                        class="form-control"
-                        placeholder="Search notifications..."
-                        aria-label="Search notifications">
-                    <button class="btn btn-outline-secondary" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+      <!-- Demurrage Rate Card -->
+      <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 me-3">
+                <div class="bg-primary bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-peso-sign text-primary fa-fw fa-lg"></i>
                 </div>
-            </form>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+              </div>
+              <div>
+                <h6 class="card-title mb-1">Demurrage Rate</h6>
+                <h3 class="mb-0"><?php echo number_format($demurrage['demurrage'] / 3600, 4); ?></h3>
+                <small class="text-muted">per second</small>
+              </div>
+            </div>
+          </div>
         </div>
-    </div>
-    <div class="offcanvas-body p-3">
-        <div id="notificationList" class="list-group list-group-flush">
-            <!-- Notifications will be dynamically loaded here -->
+      </div>
+
+      <!-- Total Transactions Card -->
+      <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 me-3">
+                <div class="bg-success bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-asterisk text-success fa-fw fa-lg"></i>
+                </div>
+              </div>
+              <div>
+                <h6 class="card-title mb-1">Total Transactions</h6>
+                <h3 class="mb-0"><?php echo number_format($Transaction['count(*)']); ?></h3>
+                <small class="text-muted">all time</small>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Active Transactions Card -->
+      <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 me-3">
+                <div class="bg-info bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-id-card text-info fa-fw fa-lg"></i>
+                </div>
+              </div>
+              <div>
+                <h6 class="card-title mb-1">Active Transactions</h6>
+                <h3 class="mb-0"><?php echo number_format($Active['count(*)']); ?></h3>
+                <small class="text-muted">current</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vehicles in Transit Card -->
+      <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 me-3">
+                <div class="bg-warning bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-truck text-warning fa-fw fa-lg"></i>
+                </div>
+              </div>
+              <div>
+                <h6 class="card-title mb-1">Vehicles in Transit</h6>
+                <h3 class="mb-0"><?php echo number_format($Transit['count(*)']); ?></h3>
+                <small class="text-muted">on the road</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Queue and Unloading Stats -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 me-3">
+                <div class="bg-secondary bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-clock text-secondary fa-fw fa-lg"></i>
+                </div>
+              </div>
+              <div>
+                <h6 class="card-title mb-1">Vehicles in Queue</h6>
+                <h3 class="mb-0"><?php echo number_format($queue['count(*)']); ?></h3>
+                <small class="text-muted">waiting</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 me-3">
+                <div class="bg-danger bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-box text-danger fa-fw fa-lg"></i>
+                </div>
+              </div>
+              <div>
+                <h6 class="card-title mb-1">Total Unloading</h6>
+                <h3 class="mb-0"><?php echo number_format($unloading['count(*)']); ?></h3>
+                <small class="text-muted">in progress</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
+
 <?php
-include_once('../../includes/footer/footer-branch.php');
+include_once('../../includes/footer/footer-admin.php');
 ?>
+<script src="../../assets/js/main.js"></script>
+<script>
+  $(document).ready(() => {
+    $("#settingsLogTable").DataTable({
+      lengthChange: false,
+      order: [
+        [0, "desc"]
+      ],
+      pageLength: 5
+    });
+    var chart;
+
+    function updateChart(period) {
+      $.ajax({
+        url: "../../api/main.php",
+        type: "POST",
+        data: {
+          action: "get-transaction-count",
+          period: period,
+        },
+        dataType: "json",
+        success: function(data) {
+          if (!Array.isArray(data)) {
+            console.error("Error fetching data:", data);
+            return;
+          }
+
+          var ctx = document.getElementById("transactionChart").getContext("2d");
+
+          var labels = data.map(function(item) {
+            return item.label;
+          });
+
+          var counts = data.map(function(item) {
+            return item.transaction_count;
+          });
+
+          if (chart) {
+            chart.destroy();
+          }
+
+          chart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: labels,
+              datasets: [{
+                label: "Number of Transactions",
+                backgroundColor: "#2f364a",
+                borderColor: "#2f364a",
+                pointBackgroundColor: "#2f364a",
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "#2f364a",
+                data: counts,
+                tension: 0.4,
+              }, ],
+            },
+            options: {
+
+              responsive: true,
+              plugins: {
+                title: {
+                  display: true,
+                  text: "Transaction Count - " +
+                    period.charAt(0).toUpperCase() +
+                    period.slice(1),
+                  font: {
+                    size: 24,
+                  },
+                },
+                legend: {
+                  display: false,
+                },
+              },
+              scales: {
+                x: {
+                  display: true,
+                  title: {
+                    display: true,
+                    text: period === "today" ?
+                      "Hour" : period === "month" ?
+                      "Day" : "Month",
+                    font: {
+                      size: 18,
+                    },
+                  },
+                  grid: {
+                    color: "rgba(0, 0, 0, 0.1)",
+                  },
+                  ticks: {
+                    font: {
+                      size: 14,
+                    },
+                  },
+                },
+                y: {
+                  display: true,
+                  title: {
+                    display: true,
+                    text: "Number of Transactions",
+                    font: {
+                      size: 16,
+                    },
+                  },
+                  beginAtZero: true,
+
+                  ticks: {
+                    font: {
+                      size: 14,
+                    },
+                  },
+                },
+              },
+            },
+          });
+        },
+        error: function(xhr, status, error) {
+          console.error("Error fetching data:", error);
+        },
+      });
+    }
+
+    // Initial chart load
+    updateChart("year");
+
+    // Add event listener for the select dropdown
+    $("#transactionPeriodSelect").change(function() {
+      var period = $(this).val();
+      updateChart(period);
+    });
+  });
+</script>
+</body>
+
+</html>

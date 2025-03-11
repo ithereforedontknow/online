@@ -29,7 +29,8 @@ class TransactionManager
     }
     public function getTransactionStatus()
     {
-        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname, arrival.arrival_time, unloading.time_of_entry, queue.ordinal, queue.shift, queue.schedule, queue.transfer_in_line FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id LEFT JOIN queue on queue.transaction_id = transaction.transaction_id LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id WHERE transaction.status != 'cancelled' AND transaction.status != 'done' AND transaction.status != 'diverted'";
+        $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname, arrival.arrival_time, unloading.time_of_entry, 
+        .ordinal, queue.shift, queue.schedule, queue.transfer_in_line FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id LEFT JOIN queue on queue.transaction_id = transaction.transaction_id LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id WHERE transaction.status != 'cancelled' AND transaction.status != 'done' AND transaction.status != 'diverted'";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -63,6 +64,11 @@ class TransactionManager
             // if (strtotime($data['time-departure']) < strtotime(date('Y-m-d H:i:s'))) {
             //     throw new Exception('Time of Departure cannot be in the past');
             // }
+
+            if (strtotime($data['time-departure']) >= strtotime(date('Y-m-d H:i:s'))) {
+                throw new Exception('Time of Departure cannot be in the future');
+            }
+
             // Update driver availability
             $stmt = $this->conn->prepare("
                 UPDATE driver
@@ -636,7 +642,7 @@ class TransactionManager
 
     public function getFinishedTransactions()
     {
-        $sql = "SELECT *, transaction.time_of_departure as timeOfDeparture FROM transaction INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id INNER JOIN queue ON transaction.transaction_id = queue.transaction_id INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id WHERE status = 'done' ORDER BY transaction.transaction_id DESC";
+        $sql = "SELECT *, transaction.time_of_departure as timeOfDeparture FROM transaction INNER JOIN origin ON transaction.origin_id = origin.origin_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id INNER JOIN queue ON transaction.transaction_id = queue.transaction_id INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id WHERE status = 'done' ORDER BY transaction.transaction_id DESC";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -741,31 +747,24 @@ class TransactionManager
             $stmt->execute(['id' => $data['transaction_id']]);
             $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            try {
-                if ($data['set_available'] === 'true') {
-                    $stmt = $this->conn->prepare("UPDATE vehicle SET status = :status WHERE vehicle_id = :id");
-                    $stmt->execute([
-                        ':status' => '1',
-                        ':id' => $transaction['vehicle_id']
-                    ]);
+            if ($data['set_available'] === 'true') {
+                $stmt = $this->conn->prepare("UPDATE vehicle SET status = :status WHERE vehicle_id = :id");
+                $stmt->execute([
+                    ':status' => '1',
+                    ':id' => $transaction['vehicle_id']
+                ]);
 
-                    $stmt = $this->conn->prepare("UPDATE driver SET status = :status WHERE driver_id = :id");
-                    $stmt->execute([
-                        ':status' => '1',
-                        ':id' => $transaction['driver_id']
-                    ]);
+                $stmt = $this->conn->prepare("UPDATE driver SET status = :status WHERE driver_id = :id");
+                $stmt->execute([
+                    ':status' => '1',
+                    ':id' => $transaction['driver_id']
+                ]);
 
-                    $stmt = $this->conn->prepare("UPDATE helper SET status = :status WHERE helper_id = :id");
-                    $stmt->execute([
-                        ':status' => '1',
-                        ':id' => $transaction['helper_id']
-                    ]);
-
-                    return $this->sendResponse(true, 'Status updated successfully');
-                }
-            } catch (PDOException $e) {
-                error_log('Database error: ' . $e->getMessage());
-                return $this->sendResponse(false, 'Error updating status', $e->getMessage());
+                $stmt = $this->conn->prepare("UPDATE helper SET status = :status WHERE helper_id = :id");
+                $stmt->execute([
+                    ':status' => '1',
+                    ':id' => $transaction['helper_id']
+                ]);
             }
 
             $stmt = $this->conn->prepare("INSERT INTO diverted (transaction_id, to_reference, new_destination, remarks) VALUES (:id, :to_reference, :new_destination, :remarks)");
@@ -780,7 +779,7 @@ class TransactionManager
             $stmt->execute([
                 ':id' => $data['transaction_id'],
                 ':created_by' => $_SESSION['username'],
-                ':details' => $data['to_reference'] . 'Transaction diverted to ' . $data['origin_id'] . ' by ' . $_SESSION['username']
+                ':details' => $data['to_reference'] . ' Transaction diverted' . ' by ' . $_SESSION['username']
             ]);
 
             return $this->sendResponse(true, 'Transaction diverted successfully');

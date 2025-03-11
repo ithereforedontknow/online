@@ -248,7 +248,13 @@ $("#add-branch-transaction").submit(async function (event) {
         $("#add-branch-transaction")[0].reset();
       });
     } else {
-      Swal.fire("Error submitting transaction: " + response.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: response.message,
+        showConfirmButton: false,
+        timer: 1500,
+      });
     }
   } catch (error) {
     console.error("Error submitting transaction:", error);

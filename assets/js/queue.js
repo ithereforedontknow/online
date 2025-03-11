@@ -357,7 +357,13 @@ $("#add-unloading-form").submit(async function (e) {
       refreshToEnterList();
       $("#viewQueueModal").modal("hide");
     } else {
-      console.error("Transaction unloading failed:", response.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: response.message || "Transaction unloading failed.",
+        showConfirmButton: false,
+        timer: 1500,
+      });
     }
   } catch (error) {
     console.error("Transaction unloading failed:", error);
@@ -382,8 +388,7 @@ $("#confirm-enter-queue-form").submit(async function (e) {
       $("#enterQueueModal").modal("hide");
     } else {
       Swal.fire({
-        icon: "error",
-        title: "Error",
+        icon: "info",
         text: response.message,
         showConfirmButton: false,
         timer: 1500,

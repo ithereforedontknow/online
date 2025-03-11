@@ -26,6 +26,7 @@ include_once('../../includes/header/header-admin.php');
                             <thead>
                                 <tr>
                                     <th class="text-center" scope="col">To Reference</th>
+                                    <th class="text-center" scope="col">Origin</th>
                                     <th class="text-center" scope="col">Demurrage</th>
                                     <th class="text-center" scope="col">Kilos</th>
                                     <th class="text-center" scope="col">Transfer Out Net Weight kg</th>

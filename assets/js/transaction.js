@@ -1158,7 +1158,6 @@ $("#add-queue-transaction").submit(async function (e) {
     ordinal: $("#add-queue-ordinal").val(),
     shift: $("#add-queue-shift").val(),
     schedule: $("#add-queue-schedule").val(),
-    queue_number: $("#add-queue-number").val(),
     priority: $("#add-queue-priority").val(),
   };
 
@@ -1173,8 +1172,13 @@ $("#add-queue-transaction").submit(async function (e) {
       refreshArrivedList();
       $("#addQueueModal").modal("hide");
     } else {
-      $("#add-queue-number").addClass("is-invalid");
-      console.error("Error queueing transaction:", response.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: response.message || "Transaction queueing failed.",
+        showConfirmButton: false,
+        timer: 1500,
+      });
     }
   } catch (error) {
     console.error("Transaction queueing failed:", error);
@@ -1203,11 +1207,11 @@ async function refreshFinishedTransactions() {
         .map(
           (transaction) => `
           <tr>
-            <td class="text-center">${
-              transaction.to_reference
-            }</td><td class="text-center">&#8369; ${parseFloat(
-            transaction.demurrage
-          ).toFixed(2)}</td>
+            <td class="text-center">${transaction.to_reference}</td>
+            <td class="text-center">${transaction.origin_name}</td>
+            <td class="text-center">&#8369; ${parseFloat(
+              transaction.demurrage
+            ).toFixed(2)}</td>
             <td class="text-center">${transaction.kilos}</td>
             <td class="text-center">
               ${

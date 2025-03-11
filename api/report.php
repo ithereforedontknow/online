@@ -91,8 +91,8 @@ class reportManager
                     ]
                 ]);
 
-                // Add Subtitle with Date Range
-                $sheet->setCellValue('A2', "Date Range: {$dateFrom} to {$dateTo}");
+                // Add Subtitle with As Of
+                $sheet->setCellValue('A2', "As Of: {$dateFrom} to {$dateTo}");
                 $sheet->mergeCells('A2:R2');
                 $sheet->getStyle('A2')->applyFromArray([
                     'font' => [
@@ -262,10 +262,10 @@ class reportManager
                 $pdf->Ln(25);
                 $pdf->Cell(0, 10, 'Tally Report', 0, 1, 'C');
 
-                // Date Range Subtitle
+                // As Of Subtitle
                 $pdf->SetFont('helvetica', 'I', 10);
                 $pdf->SetTextColor($bodyTextColor[0], $bodyTextColor[1], $bodyTextColor[2]);
-                $pdf->Cell(0, 10, "Date Range: {$dateFrom} to {$dateTo}", 0, 1, 'C');
+                $pdf->Cell(0, 10, "As Of: {$dateFrom} to {$dateTo}", 0, 1, 'C');
 
                 // Fetch transactions
                 $query = "SELECT * FROM transaction
@@ -687,10 +687,10 @@ ORDER BY transaction.transaction_id DESC";
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
                 $pdf->Cell(0, 10, 'Unloading Report', 0, 1, 'C');
                 $pdf->Ln(2);
-                // Date Range Subtitle
+                // As Of Subtitle
                 $pdf->SetFont('helvetica', 'I', 10);
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
-                $pdf->Cell(0, 10, "Date Range: {$dateFrom} to {$dateTo}", 0, 1, 'C');
+                $pdf->Cell(0, 10, "As Of: {$dateFrom} to {$dateTo}", 0, 1, 'C');
 
                 // Function to add table headers
                 function addTableHeader($pdf, $headerColor, $textColor)
@@ -920,8 +920,8 @@ ORDER BY transaction.transaction_id DESC";
                 $sheet->mergeCells('K10:S10');
                 $sheet->setCellValue('U10', '# of Trucks UNLOADED per Shift');
                 $sheet->mergeCells('U10:W10');
-                // Update date range styling
-                $sheet->setCellValue('A8', 'Date Range: ' . date('F d, Y', strtotime($startDate)) . ' - ' . date('F d, Y', strtotime($endDate)));
+                // Update As Of styling
+                $sheet->setCellValue('A8', 'As Of: ' . date('F d, Y', strtotime($startDate)) . ' - ' . date('F d, Y', strtotime($endDate)));
                 $sheet->mergeCells('A8:W8');
                 $sheet->getStyle('A8')->applyFromArray([
                     'font' => [
@@ -1120,10 +1120,10 @@ ORDER BY transaction.transaction_id DESC";
 
                 $pdf->Cell(0, 15, 'DAILY SUMMARY REPORT', 0, 1, 'C');
 
-                // Date Range
+                // As Of
                 $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
                 $pdf->SetFont('helvetica', 'I', 10);
-                $pdf->Cell(0, 10, 'Date Range: ' . date('F d, Y', strtotime($startDate)) . ' - ' . date('F d, Y', strtotime($endDate)), 0, 1, 'C');
+                $pdf->Cell(0, 10, 'As Of: ' . date('F d, Y', strtotime($startDate)) . ' - ' . date('F d, Y', strtotime($endDate)), 0, 1, 'C');
                 // Section headers
                 $pdf->SetFont('helvetica', 'B', 8);
                 $pdf->Cell(160, 7, 'Number of Trucks', 0, 0, 'C', false);
@@ -1279,7 +1279,7 @@ ORDER BY transaction.transaction_id DESC";
                 $textColor = '34495E';
 
                 // Title Styling
-                $sheet->setCellValue('A1', 'STATUS REPORT');
+                $sheet->setCellValue('A1', strtoupper($status) . ' REPORT');
                 $sheet->mergeCells('A1:K1');
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => [
@@ -1297,8 +1297,8 @@ ORDER BY transaction.transaction_id DESC";
                     ]
                 ]);
 
-                // Add Subtitle with Date Range
-                $sheet->setCellValue('A2', "Date Range: {$dateFrom} to {$dateTo}");
+                // Add Subtitle with As Of
+                $sheet->setCellValue('A2', "As Of: {$dateFrom} to {$dateTo}");
                 $sheet->mergeCells('A2:K2');
                 $sheet->getStyle('A2')->applyFromArray([
                     'font' => [
@@ -1475,12 +1475,12 @@ ORDER BY transaction.transaction_id DESC";
                 // Title
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
                 $pdf->SetFont('helvetica', 'B', 16);
-                $pdf->Cell(0, 15, 'STATUS REPORT', 0, 1, 'C');
+                $pdf->Cell(0, 15, strtoupper($status) . ' REPORT', 0, 1, 'C');
 
-                // Date Range
+                // As Of
                 $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
                 $pdf->SetFont('helvetica', 'I', 10);
-                $pdf->Cell(0, 10, 'Date Range: ' . date('F d, Y', strtotime($dateFrom)) . ' - ' . date('F d, Y', strtotime($dateTo)), 0, 1, 'C');
+                $pdf->Cell(0, 10, 'As Of: ' . date('F d, Y', strtotime($dateFrom)) . ' - ' . date('F d, Y', strtotime($dateTo)), 0, 1, 'C');
                 $pdf->Ln(5);
 
                 // Headers
@@ -1657,8 +1657,8 @@ ORDER BY transaction.transaction_id DESC";
                     ]
                 ]);
 
-                // Add Subtitle with Date Range
-                $sheet->setCellValue('A2', "Date Range: {$dateFrom} to {$dateTo}");
+                // Add Subtitle with As Of
+                $sheet->setCellValue('A2', "As Of: {$dateFrom} to {$dateTo}");
                 $sheet->mergeCells('A2:I2');
                 $sheet->getStyle('A2')->applyFromArray([
                     'font' => [
@@ -1838,10 +1838,10 @@ ORDER BY transaction.transaction_id DESC";
                 $pdf->SetFont('helvetica', 'B', 16);
                 $pdf->Cell(0, 15, 'DEMURRAGE REPORT', 0, 1, 'C');
 
-                // Date Range
+                // As Of
                 $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
                 $pdf->SetFont('helvetica', 'I', 10);
-                $pdf->Cell(0, 10, 'Date Range: ' . date('F d, Y', strtotime($dateFrom)) . ' - ' . date('F d, Y', strtotime($dateTo)), 0, 1, 'C');
+                $pdf->Cell(0, 10, 'As Of: ' . date('F d, Y', strtotime($dateFrom)) . ' - ' . date('F d, Y', strtotime($dateTo)), 0, 1, 'C');
                 $pdf->Ln(5);
 
                 // Headers
@@ -1989,8 +1989,8 @@ ORDER BY transaction.transaction_id DESC";
                     ]
                 ]);
 
-                // Add Subtitle with Date Range
-                $sheet->setCellValue('A2', "Date Range: {$dateFrom} to {$dateTo}");
+                // Add Subtitle with As Of
+                $sheet->setCellValue('A2', "As Of: {$dateFrom} to {$dateTo}");
                 $sheet->mergeCells('A2:C2');
                 $sheet->getStyle('A2')->applyFromArray([
                     'font' => [
@@ -2131,10 +2131,10 @@ ORDER BY transaction.transaction_id DESC";
                 $pdf->SetFont('helvetica', 'B', 16);
                 $pdf->Cell(0, 15, 'Diverted Vehicles Report', 0, 1, 'C');
 
-                // Date Range
+                // As Of
                 $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
                 $pdf->SetFont('helvetica', 'I', 10);
-                $pdf->Cell(0, 10, 'Date Range: ' . date('F d, Y', strtotime($dateFrom)) . ' - ' . date('F d, Y', strtotime($dateTo)), 0, 1, 'C');
+                $pdf->Cell(0, 10, 'As Of: ' . date('F d, Y', strtotime($dateFrom)) . ' - ' . date('F d, Y', strtotime($dateTo)), 0, 1, 'C');
                 $pdf->Ln(5);
 
                 // Calculate column widths (total width = 277mm for A4 Landscape)
@@ -2668,7 +2668,7 @@ ORDER BY transaction.transaction_id DESC";
                 $headers = [
                     'Settings Name',
                     'Details',
-                    'Created By',
+                    'Attempts',
                     'Created At'
                 ];
 

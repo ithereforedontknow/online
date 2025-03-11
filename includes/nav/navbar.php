@@ -65,29 +65,42 @@
                     Vehicle Transactions
                 </a>
             </li>
-            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder' && $_SESSION['userlevel'] != 'traffic(branch)') { ?>
                 <li class="nav-item mb-2">
-                    <a href="queue.php" class="nav-link text-white">
+                    <a href="#queueSubmenu" data-bs-toggle="collapse" class="nav-link text-white d-flex align-items-center">
                         <i class="fa-solid fa-clock fa-lg me-2"></i>
-                        Queue Management
+                        <span>Queue Management</span>
+                        <i class="fa-solid fa-chevron-down ms-auto"></i>
                     </a>
+                    <ul class="collapse nav flex-column ms-4" id="queueSubmenu">
+                        <li class="nav-item">
+                            <a href="queue.php" class="nav-link text-white">
+                                <i class="fa-solid fa-list fa-sm me-2"></i>Queue
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="to-enter.php" class="nav-link text-white">
+                                <i class="fa-solid fa-arrow-right-to-bracket fa-sm me-2"></i>To Enter
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             <?php } ?>
-            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder' && $_SESSION['userlevel'] != 'traffic(branch)') { ?>
                 <li class="nav-item mb-2">
                     <a href="unloading.php" class="nav-link text-white">
                         <i class="fa-solid fa-spinner fa-lg me-2"></i> Vehicle Unloading
                     </a>
                 </li>
             <?php } ?>
-            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder' && $_SESSION['userlevel'] != 'traffic(branch)') { ?>
                 <li class="nav-item mb-2">
                     <a href="finished-transactions.php" class="nav-link text-white">
                         <i class="fa-solid fa-receipt fa-lg me-2"></i> Finished Transactions
                     </a>
                 </li>
             <?php } ?>
-            <?php if ($_SESSION['userlevel'] != 'encoder') { ?>
+            <?php if ($_SESSION['userlevel'] != 'encoder' && $_SESSION['userlevel'] != 'traffic(branch)') { ?>
                 <li class="nav-item mb-2">
                     <a href="report-generation.php" class="nav-link text-white">
                         <i class="fa-solid fa-print fa-lg me-2"></i>
@@ -95,11 +108,13 @@
                     </a>
                 </li>
             <?php } ?>
-            <li class="nav-item mb-2">
-                <a href="settings.php" class="nav-link text-white">
-                    <i class="fa-solid fa-gear fa-lg me-2"></i> Settings
-                </a>
-            </li>
+            <?php if ($_SESSION['userlevel'] != 'traffic(branch)') { ?>
+                <li class="nav-item mb-2">
+                    <a href="settings.php" class="nav-link text-white">
+                        <i class="fa-solid fa-gear fa-lg me-2"></i> Settings
+                    </a>
+                </li>
+            <?php } ?>
             <li class="nav-item mb-2">
                 <a href="help.php" class="nav-link text-white">
                     <i class="fa-solid fa-question fa-lg me-2"></i> Help
