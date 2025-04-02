@@ -31,7 +31,7 @@ include_once('../../includes/header/header-admin.php');
                 <th class="text-center" scope="col">Plate Number</th>
                 <th class="text-center" scope="col">Truck Type</th>
                 <th class="text-center" scope="col">Status</th>
-                <th class="text-center" scope="col">...</th>
+                <th class="text-center" scope="col">Action</th>
             </thead>
             <tbody id="vehicle-list">
             </tbody>
@@ -71,7 +71,7 @@ include_once('../../includes/header/header-admin.php');
                         </script>
 
                     </div>
-                    <div class="form-floating">
+                    <div class="form-floating mb-4">
                         <select name="truck-type" id="add-truck-type" class="form-select" onchange="showOthersType()" required>
                             <option value="Trailer">Trailer</option>
                             <option value="Ten Wheeler">Ten Wheeler</option>
@@ -80,6 +80,14 @@ include_once('../../includes/header/header-admin.php');
                             <option value="Others">Others</option>
                         </select>
                         <label for="truck-type">Truck Type</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text">Length</span>
+                        <input type="text" placeholder="meters" id="add-truck-length" class="form-control" oninput="this.value = this.value.replace(/[^0-9.]/g, '');" required>
+                        <span class="input-group-text">Width</span>
+                        <input type="text" placeholder="meters" id="add-truck-width" class="form-control" oninput="this.value = this.value.replace(/[^0-9.]/g, '');" required>
+                        <span class="input-group-text">Height</span>
+                        <input type="text" placeholder="meters" id="add-truck-height" class="form-control" oninput="this.value = this.value.replace(/[^0-9.]/g, '');" required>
                     </div>
                     <!-- <div class="form-floating mt-4" id="others-type-container" style="display: none;">
                         <input type="text" class="form-control" id="others-type" name="others-type" required>
@@ -122,7 +130,7 @@ include_once('../../includes/header/header-admin.php');
                         <label for="edit-plate-no">Plate Number</label>
                         <div class="invalid-feedback">Plate Number already exists!</div>
                     </div>
-                    <div class="form-floating">
+                    <div class="form-floating mb-4">
                         <select name="edit-truck-type" id="edit-truck-type" class="form-select" onchange="showOthersType()" required>
                             <option value="Trailer">Trailer</option>
                             <option value="Ten Wheeler">Ten Wheeler</option>
@@ -131,6 +139,14 @@ include_once('../../includes/header/header-admin.php');
                             <option value="Others">Others</option>
                         </select>
                         <label for="edit-truck-type">Truck Type</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text">Length</span>
+                        <input type="text" placeholder="meters" id="edit-truck-length" class="form-control" oninput="this.value = this.value.replace(/[^0-9.]/g, '');" required>
+                        <span class="input-group-text">Width</span>
+                        <input type="text" placeholder="meters" id="edit-truck-width" class="form-control" oninput="this.value = this.value.replace(/[^0-9.]/g, '');" required>
+                        <span class="input-group-text">Height</span>
+                        <input type="text" placeholder="meters" id="edit-truck-height" class="form-control" oninput="this.value = this.value.replace(/[^0-9.]/g, '');" required>
                     </div>
                     <!-- <div class="form-floating mt-4" id="edit-others-type-container" style="display: none;">
                         <input type="text" class="form-control" id="edit-others-type" name="edit-others-type" required>

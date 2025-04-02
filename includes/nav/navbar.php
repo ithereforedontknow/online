@@ -3,7 +3,10 @@
         <i class="fa-solid fa-bars fa-lg" style="color:#ffffff"></i>
     </button>
     <img src="../../assets/img/Untitled-1.png" style="width: 40px;">
-    <a class="navbar-brand ms-3 fw-bold">Online Vehicle Management System</a>
+    <a class="navbar-brand ms-3 fw-bold">
+        Online Vehicle Management System
+        <?php if ($_SESSION['userlevel'] !== 'admin') echo ' - ' . $row['origin_name']; ?>
+    </a>
     <div class="collapse navbar-collapse justify-content-end">
         <ul class="navbar-nav ml-auto">
             <!-- Notification Dropdown -->
@@ -72,7 +75,7 @@
                         <span>Queue Management</span>
                         <i class="fa-solid fa-chevron-down ms-auto"></i>
                     </a>
-                    <ul class="collapse nav flex-column ms-4" id="queueSubmenu">
+                    <ul class="collapse nav ms-5" id="queueSubmenu">
                         <li class="nav-item">
                             <a href="queue.php" class="nav-link text-white">
                                 <i class="fa-solid fa-list fa-sm me-2"></i>Queue
@@ -111,7 +114,7 @@
             <?php if ($_SESSION['userlevel'] != 'traffic(branch)') { ?>
                 <li class="nav-item mb-2">
                     <a href="settings.php" class="nav-link text-white">
-                        <i class="fa-solid fa-gear fa-lg me-2"></i> Settings
+                        <i class="fa-solid fa-gear fa-lg me-2"></i> Utilities
                     </a>
                 </li>
             <?php } ?>

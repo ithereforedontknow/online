@@ -22,7 +22,6 @@ include_once('../../includes/header/header-admin.php');
         </div>
         <div class="card border-0 shadow-sm p-4">
             <div class="card-body">
-                <h1 class="display-5 fw-bold text-center">Queue</h1>
                 <a class="btn btn-primary w-25" href="view-queue.php">Present Screen</a>
                 <div class="row my-3">
                     <div class="queue-legend mb-3">
@@ -72,12 +71,14 @@ include_once('../../includes/header/header-admin.php');
                     <thead>
                         <tr>
                             <th class="text-center">Vehicle Pass</th>
+                            <th class="text-center">TO Reference</th>
+                            <th class="text-center">Project</th>
                             <th class="text-center">Plate Number</th>
                             <th class="text-center">Order</th>
                             <th class="text-center">Shift</th>
                             <th class="text-center">Schedule</th>
                             <th class="text-center">Line</th>
-                            <th class="text-center">...</th>
+                            <th class="text-center">Enter</th>
                         </tr>
                     </thead>
                     <tbody id="queue-list">

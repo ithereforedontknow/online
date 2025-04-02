@@ -229,6 +229,7 @@ include_once('../../includes/header/header-main.php');
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+
                 <form id="logsReportForm">
                     <input type="hidden" name="logReportType" id="logReportType" value="logs">
                     <div class="form-floating mb-3">

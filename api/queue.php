@@ -39,7 +39,7 @@ class queueManager
                 INNER JOIN origin ON transaction.origin_id = origin.origin_id
                 INNER JOIN project ON transaction.project_id = project.project_id
                 WHERE transaction.status = :status
-                ORDER BY arrival.arrival_time DESC';
+                ORDER BY transaction.updated_at DESC';
         try {
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['status' => $status]);
@@ -55,7 +55,9 @@ class queueManager
         $sql = 'SELECT * FROM transaction
         INNER JOIN queue ON transaction.transaction_id = queue.transaction_id
         INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id
-        WHERE transaction.status = :status';
+        INNER JOIN project ON transaction.project_id = project.project_id
+        WHERE transaction.status = :status
+        ORDER BY queue.queue_number ASC';
         try {
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['status' => $status]);
@@ -111,6 +113,12 @@ class queueManager
                     ':details' => 'Transaction added by ' . $data['created_by'],
                     ':created_by' => $data['created_by']
                 ]);
+                $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+                $stmt->execute([
+                    'user_id' => $_SESSION['id'],
+                    'username' => $_SESSION['username'],
+                    'action' => 'Added transaction',
+                ]);
                 $this->sendResponse(true, 'Transaction added successfully');
             }
         } catch (PDOException $e) {
@@ -161,8 +169,14 @@ WHERE DATE(created_at) = CURDATE()
             $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
-                ':details' => $to_reference . ' Transaction added to queue by ' . $created_by . ' with transfer in line ' . $transfer_in_line . ', ordinal ' . $ordinal . ', shift ' . $shift . ', schedule ' . $schedule .  ', and priority ' . $priority . ', and queue number ' . $queue_number,
+                ':details' => $to_reference . ' Transaction added to queue by ' . $_SESSION['username'] . ' with transfer in line ' . $transfer_in_line . ', ordinal ' . $ordinal . ', shift ' . $shift . ', schedule ' . $schedule .  ', and priority ' . $priority . ', and queue number ' . $queue_number,
                 ':created_by' => $created_by
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Added transaction to queue',
             ]);
             $this->sendResponse(true, 'Transaction added to queue successfully');
         } catch (PDOException $e) {
@@ -220,7 +234,12 @@ WHERE DATE(created_at) = CURDATE()
                     ' Queue details updated by ' . $created_by,
                 ':created_by' => $created_by
             ]);
-
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Updated queue details',
+            ]);
             $this->sendResponse(true, 'Transaction updated to queue successfully');
         } catch (PDOException $e) {
             error_log('Error updating transaction to queue: ' . $e->getMessage());
@@ -230,7 +249,13 @@ WHERE DATE(created_at) = CURDATE()
     public function getToEnter($status)
     {
         try {
-            $stmt = $this->conn->prepare("SELECT transaction.transaction_id, vehicle.plate_number, transaction.status, arrival.arrival_time FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.status = :status || transaction.status = 'standby - sms sent'");
+            $stmt = $this->conn->prepare("SELECT project.project_name, transaction.to_reference, transaction.transaction_id, vehicle.plate_number, transaction.status, arrival.arrival_time 
+            FROM transaction 
+            INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id 
+            INNER JOIN project ON transaction.project_id = project.project_id 
+            INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id 
+            WHERE transaction.status = :status || transaction.status = 'standby - sms sent'
+            ORDER BY arrival.arrival_time ASC");
             $stmt->execute(['status' => $status]);
             $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $this->sendResponse(true, 'Transactions retrieved successfully', ['transactions' => $transactions]);
@@ -268,6 +293,12 @@ WHERE DATE(created_at) = CURDATE()
                 ':details' => $to_reference . ' Transaction moved to unloading by ' . $created_by,
                 ':created_by' => $created_by
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Moved transaction to standby',
+            ]);
             $this->sendResponse(true, 'Transaction moved to unloading successfully');
         } catch (PDOException $e) {
             error_log('Error moving transaction to unloading: ' . $e->getMessage());
@@ -293,7 +324,7 @@ WHERE DATE(created_at) = CURDATE()
             $transferInLineCount = $countResult['count'];
 
             if ($transferInLineCount >= 3) {
-                $this->sendResponse(false, 'Transfer in line is full. Maximum of 3 allowed');
+                $this->sendResponse(false, $transfer_in_line . '  is full. Maximum of 3 allowed');
                 exit;
             }
             $stmt = $this->conn->prepare("SELECT arrival_time FROM arrival WHERE transaction_id = :transaction_id");
@@ -317,25 +348,24 @@ WHERE DATE(created_at) = CURDATE()
                 return;
             }
 
-            // Get time of departure
-            $stmt = $this->conn->prepare("SELECT time_of_departure FROM transaction WHERE transaction_id = :transaction_id");
+            $stmt = $this->conn->prepare("SELECT arrival_time FROM transaction INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.transaction_id = :transaction_id");
             $stmt->execute([
                 ':transaction_id' => $transaction_id
             ]);
 
-            $timeOfDeparture = $stmt->fetchColumn();
+            $arrivalTime = $stmt->fetchColumn();
 
-            if (!$timeOfDeparture) {
+            if (!$arrivalTime) {
                 $this->sendResponse(false, "Arrival time not found for this transaction");
             }
 
 
-            $timeOfDepartureTimestamp = strtotime($timeOfDeparture);
+            $arrivalTimeTimestamp = strtotime($arrival_time);
             $timeOfEntryTimestamp = strtotime($time_of_entry);
 
-            if (is_numeric($timeOfDepartureTimestamp) && is_numeric($timeOfEntryTimestamp)) {
+            if (is_numeric($arrivalTimeTimestamp) && is_numeric($timeOfEntryTimestamp)) {
                 // Calculate the time difference in seconds
-                $timeDifference = $timeOfEntryTimestamp - $timeOfDepartureTimestamp;
+                $timeDifference = $timeOfEntryTimestamp - $arrivalTimeTimestamp;
 
                 // Convert time difference to hours, minutes, and seconds
                 $hours = floor($timeDifference / 3600);
@@ -379,7 +409,7 @@ WHERE DATE(created_at) = CURDATE()
                 $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
                 $stmt->execute([
                     ':transaction_id' => $transaction_id,
-                    ':details' => $to_reference . ' Transaction has been processed to enter by ' . $created_by,
+                    ':details' => $to_reference . ' Transaction has been processed to enter by ' . $_SESSION['username'],
                     ':created_by' => $created_by
                 ]);
 
@@ -388,9 +418,15 @@ WHERE DATE(created_at) = CURDATE()
             } else {
                 throw new Exception("Invalid time format");
             }
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Moved transaction to unloading',
+            ]);
         } catch (PDOException $e) {
             error_log('Error processing transaction: ' . $e->getMessage());
-            $this->sendResponse(false, 'Error processing transaction');
+            $this->sendResponse(false, 'Error processing transaction', $e->getMessage());
         }
     }
     public function sendSMS($transaction_id, $force = false)
@@ -437,9 +473,15 @@ WHERE DATE(created_at) = CURDATE()
             }
 
             // Construct SMS message
-            $message = "Hi " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ", your vehicle with plate number " . $driver['plate_number'] . " has been processed." . " You may enter " . $driver['transfer_in_line'] . ". Please be on time.";
-
+            // $message = "Hi " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ", your vehicle with plate number " . $driver['plate_number'] . " has been processed." . " You may enter " . $driver['transfer_in_line'] . ". Please be on time.";
+            // $message = "Dear " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ", your vehicle (Plate #" . $driver['plate_number'] . ") is now processed. You may proceed to " . $driver['transfer_in_line'] . ". Please ensure timely arrival. Thank you!";
+            $message = "Good day Mr. " . $driver['driver_fname'] . " " . $driver['driver_lname'] . ",\n\n" .
+                "Your vehicle (Plate No. " . $driver['plate_number'] . ") has been successfully processed. " .
+                "Kindly proceed to " . $driver['transfer_in_line'] . " at your earliest convenience. " .
+                "Please ensure timely arrival.\n\n" .
+                "Thank you for your cooperation.";
             // Send SMS via Semaphore API
+
             $apiKey = "6c557df5b5cfb79a20287af09f6f85af"; // Replace with your API key
             $url = "https://semaphore.co/api/v4/messages";
 

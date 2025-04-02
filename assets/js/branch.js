@@ -291,15 +291,45 @@ $(document).ready(function () {
   getNotificationCount();
   fetchNotifications();
 });
+
+// Add event listener to the "Clear Notifications" button
+const clearNotificationsButton = document.getElementById(
+  "clearNotificationsButton"
+);
+if (clearNotificationsButton) {
+  clearNotificationsButton.addEventListener("click", () => {
+    const notificationBadge = document.getElementById("notificationBadge");
+    if (notificationBadge) {
+      notificationBadge.innerText = "0"; // Set the badge text to 0
+      notificationBadge.style.display = "none"; // Optionally hide the badge
+    }
+  });
+}
+clearNotificationsButton.addEventListener("click", async () => {
+  try {
+    const response = await $.ajax({
+      url: "../../api/main.php",
+      method: "POST",
+      data: { action: "clear-notifications" },
+      dataType: "json",
+    });
+    if (response.success) {
+      const notificationBadge = document.getElementById("notificationBadge");
+      if (notificationBadge) {
+        notificationBadge.innerText = "0"; // Set the badge text to 0
+        notificationBadge.style.display = "none"; // Optionally hide the badge
+      }
+    }
+  } catch (error) {
+    console.error("Failed to clear notifications:", error);
+  }
+});
 async function getNotificationCount() {
   try {
     const response = await $.ajax({
-      url: "../../api/branch.php",
+      url: "../../api/main.php",
       method: "POST",
-      data: {
-        action: "get-notification-count",
-        branch: $("#branchName").val(),
-      },
+      data: { action: "get-notification-count" },
       dataType: "json",
     });
 
@@ -320,7 +350,6 @@ async function getNotificationCount() {
   }
 }
 // Set timer to auto-update notification count every 10 seconds
-setInterval(getNotificationCount, 5000);
 let currentOffset = 0;
 let currentLimit = 15;
 let currentSearchTerm = "";
@@ -328,37 +357,31 @@ let currentSearchTerm = "";
 async function fetchNotifications(limit = 15, offset = 0, searchTerm = "") {
   try {
     const notificationList = document.getElementById("notificationList");
-
     // Remove existing View More button if present
     const existingViewMoreBtn = document.getElementById("viewMoreBtn");
     if (existingViewMoreBtn) {
       existingViewMoreBtn.remove();
     }
-
     // Reset list if it's a new search
     if (offset === 0) {
       notificationList.innerHTML = "";
     }
-
     const response = await $.ajax({
-      url: "../../api/branch.php",
+      url: "../../api/main.php",
       method: "POST",
       data: {
         action: "get-notifications",
         limit: limit,
         offset: offset,
         search: searchTerm,
-        branch: $("#branchName").val(),
       },
       dataType: "json",
     });
-
     if (response.success && response.data.notifications.length > 0) {
       // Update current search parameters
       currentOffset = offset;
       currentLimit = limit;
       currentSearchTerm = searchTerm;
-
       // Render total results for search
       if (offset === 0 && searchTerm) {
         const searchResultsInfo = document.createElement("div");
@@ -366,10 +389,15 @@ async function fetchNotifications(limit = 15, offset = 0, searchTerm = "") {
         searchResultsInfo.textContent = `Found ${response.data.total} notifications matching "${searchTerm}"`;
         notificationList.appendChild(searchResultsInfo);
       }
-
       response.data.notifications.forEach((notification) => {
         const notificationItem = document.createElement("div");
-        notificationItem.className = "notification-item mb-3";
+        notificationItem.className = `notification-item mb-3 cursor-pointer ${
+          notification.is_read ? "read-notification" : "unread-notification"
+        }`;
+        notificationItem.style.cursor = "pointer";
+        notificationItem.setAttribute("data-notification-id", notification.id);
+        notificationItem.setAttribute("data-bs-toggle", "modal");
+        notificationItem.setAttribute("data-bs-target", "#notificationModal");
         notificationItem.innerHTML = `
           <h5 style="font-size: 16px;">
             <i class="fas fa-bell notification-icon"></i>
@@ -382,9 +410,14 @@ async function fetchNotifications(limit = 15, offset = 0, searchTerm = "") {
             ${new Date(notification.created_at).toLocaleString()}
           </small>
         `;
+        // Store the notification data as a data attribute for use when clicked
+        notificationItem.addEventListener("click", function () {
+          showNotificationDetails(notification);
+          markNotificationAsRead(notification.log_id); // Mark as read when clicked
+          console.log(notification);
+        });
         notificationList.appendChild(notificationItem);
       });
-
       // Add View More button if more notifications exist
       if (response.data.hasMore) {
         const viewMoreBtn = document.createElement("button");
@@ -402,7 +435,7 @@ async function fetchNotifications(limit = 15, offset = 0, searchTerm = "") {
     } else if (offset === 0) {
       notificationList.innerHTML = `
         <div class="alert alert-info" role="alert" style="font-size: 0.8rem;">
-          <i class="fas fa-info-circle me-2"></i> 
+          <i class="fas fa-info-circle me-2"></i>
           ${
             searchTerm
               ? `No notifications found for "${searchTerm}"`
@@ -420,7 +453,181 @@ async function fetchNotifications(limit = 15, offset = 0, searchTerm = "") {
     `;
   }
 }
-setInterval(fetchNotifications, 5000);
+function showNotificationDetails(notification) {
+  const modalTitle = document.getElementById("notificationModalLabel");
+  const modalBody = document.getElementById("notificationModalBody");
+
+  modalTitle.textContent = "Notification Details";
+
+  // Format the notification date
+  const notificationDate = new Date(notification.created_at).toLocaleString();
+
+  // Populate the modal with notification details
+  modalBody.innerHTML = `
+    <div class="notification-detail">
+      <div class="mb-3">
+        <strong>Message:</strong>
+        <p>${notification.details}</p>
+      </div>
+      <div class="mb-3">
+        <strong>Transaction ID:</strong>
+        <p>${notification.transaction_id}</p>
+      </div>
+      <div class="mb-3">
+        <strong>Date:</strong>
+        <p>${notificationDate}</p>
+      </div>
+      ${
+        notification.additional_info
+          ? `
+        <div class="mb-3">
+          <strong>Additional Information:</strong>
+          <p>${notification.additional_info}</p>
+        </div>
+      `
+          : ""
+      }
+      ${
+        notification.status
+          ? `
+        <div class="mb-3">
+          <strong>Status:</strong>
+          <p><span class="badge bg-${getStatusBadgeColor(
+            notification.status
+          )}">${notification.status}</span></p>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+}
+
+// Helper function to determine badge color based on status
+function getStatusBadgeColor(status) {
+  switch (status.toLowerCase()) {
+    case "success":
+    case "completed":
+      return "success";
+    case "pending":
+    case "in progress":
+      return "warning";
+    case "failed":
+    case "error":
+      return "danger";
+    default:
+      return "secondary";
+  }
+}
+
+// Add this HTML to your page for the modal
+// You can place this right before the closing </body> tag
+function addNotificationModal() {
+  const modalHTML = `
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="notificationModalLabel">Notification Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="notificationModalBody">
+            <!-- Notification details will be loaded here -->
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Append modal to body if it doesn't exist
+  if (!document.getElementById("notificationModal")) {
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+    // Add event listener for Mark as Read button
+    document
+      .getElementById("markAsReadBtn")
+      .addEventListener("click", function () {
+        const modal = document.getElementById("notificationModal");
+        const notificationId = modal.getAttribute("data-notification-id");
+        if (notificationId) {
+          markNotificationAsRead(notificationId);
+        }
+      });
+  }
+}
+
+// Function to mark notification as read (you would implement the API call here)
+function markNotificationAsRead(notificationId) {
+  // Implement your API call to mark notification as read
+  $.ajax({
+    url: "../../api/main.php",
+    method: "POST",
+    data: {
+      action: "mark-notification-read",
+      notification_id: notificationId,
+    },
+    dataType: "json",
+    success: function (response) {
+      if (response.success) {
+        // You could update the UI to show it's been read
+        // For example, change the background color or add a "read" indicator
+        const notificationElement = document.querySelector(
+          `[data-notification-id="${notificationId}"]`
+        );
+        if (notificationElement) {
+          notificationElement.classList.add("notification-read");
+          // Optionally, update the notification count
+          updateNotificationCount();
+        }
+        // Close the modal
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("notificationModal")
+        );
+        modal.hide();
+      } else {
+        alert("Could not mark notification as read. Please try again.");
+      }
+    },
+    error: function () {
+      alert("Error marking notification as read. Please try again later.");
+    },
+  });
+}
+
+// Function to update notification count (optional)
+function updateNotificationCount() {
+  // Implement if you have a notification count indicator
+  // This is just a placeholder implementation
+  $.ajax({
+    url: "../../api/main.php",
+    method: "POST",
+    data: {
+      action: "get-unread-notification-count",
+    },
+    dataType: "json",
+    success: function (response) {
+      if (response.success) {
+        const countElement = document.getElementById("notificationCount");
+        if (countElement) {
+          countElement.textContent = response.data.count;
+          if (response.data.count === 0) {
+            countElement.style.display = "none";
+          } else {
+            countElement.style.display = "inline-block";
+          }
+        }
+      }
+    },
+  });
+}
+
+// Call this function when your page loads
+document.addEventListener("DOMContentLoaded", function () {
+  addNotificationModal();
+  // Fetch initial notifications
+  fetchNotifications();
+});
 
 // Add search functionality
 document

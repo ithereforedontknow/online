@@ -157,11 +157,88 @@ $("#allReportsForm").submit(function (e) {
 });
 $("#logsReportForm").submit(function (e) {
   e.preventDefault();
-
+  const dateTo = $("#dateTo").val();
+  const dateFrom = $("#dateFrom").val();
+  if (!dateTo || !dateFrom) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Please select a valid date range for the report",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    return;
+  }
+  if (dateTo < dateFrom) {
+    $("#dateTo").addClass("is-invalid");
+    return;
+  } else {
+    $("#dateTo").removeClass("is-invalid");
+  }
+  if (dateFrom > dateTo) {
+    $("#dateFrom").addClass("is-invalid");
+    return;
+  } else {
+    $("#dateFrom").removeClass("is-invalid");
+  }
   const data = {
     action: $("#logReportType").val(),
     reportFormat: $("#logReportFormat").val(),
+    dateFrom: $("#dateFrom").val(),
+    dateTo: $("#dateTo").val(),
     signature: $("#logSignature").val(),
+  };
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "../../api/report.php"; // Change to the URL that handles the export
+  form.target = "_blank";
+
+  // Append the necessary form data to the form
+  Object.keys(data).forEach((key) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = data[key];
+    form.appendChild(input);
+  });
+  // Append the form to the body, submit it, and remove it
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+});
+$("#userLogsReportForm").submit(function (e) {
+  e.preventDefault();
+  const dateTo = $("#dateTo").val();
+  const dateFrom = $("#dateFrom").val();
+  if (!dateTo || !dateFrom) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Please select a valid date range for the report",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    return;
+  }
+  if (dateTo < dateFrom) {
+    $("#dateTo").addClass("is-invalid");
+    return;
+  } else {
+    $("#dateTo").removeClass("is-invalid");
+  }
+  if (dateFrom > dateTo) {
+    $("#dateFrom").addClass("is-invalid");
+    return;
+  } else {
+    $("#dateFrom").removeClass("is-invalid");
+  }
+  const data = {
+    action: "user",
+    reportFormat: $("#userlogReportFormat").val(),
+    dateFrom: $("#dateFrom").val(),
+    dateTo: $("#dateTo").val(),
+    user: $("#userLogReportUser").val(),
+    signature: $("#userLogSignature").val(),
   };
   const form = document.createElement("form");
   form.method = "POST";

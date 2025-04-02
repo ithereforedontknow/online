@@ -57,7 +57,7 @@ $(document).ready(() => {
       refreshDepartedList();
     } else if ($(this).text().trim() === "Arrived") {
       refreshArrivedList();
-    } else if ($(this).text().trim() === "Cancelled") {
+    } else if ($(this).text().trim() === "Cancelled/Diverted") {
       refreshCancelledList();
     }
   });
@@ -871,7 +871,11 @@ async function refreshDepartedList() {
         .join("");
 
       list.html(rows);
-      $("#departed-table").DataTable({ responsive: true, lengthChange: false });
+      $("#departed-table").DataTable({
+        responsive: true,
+        lengthChange: false,
+        ordering: false,
+      });
     } else {
       showError(response.message || "Unable to fetch departed transactions.");
     }
@@ -928,6 +932,7 @@ async function refreshCancelledList() {
       $("#cancelled-table").DataTable({
         responsive: true,
         lengthChange: false,
+        ordering: false,
       });
     } else {
       showError(response.message || "Unable to fetch cancelled transactions.");
@@ -983,6 +988,7 @@ async function refreshArrivedList() {
       $("#arrived-table").DataTable({
         responsive: true,
         lengthChange: false,
+        ordering: false,
       });
     } else {
       showError(response.message || "Unable to fetch arrived transactions.");
@@ -1129,7 +1135,7 @@ async function refreshTransactionStatus() {
         $(this).toggleClass("flipped");
       });
     } else {
-      showError(response.message || "Unable to fetch transaction status.");
+      showError(response.data || "Unable to fetch transaction status.");
     }
   } catch (error) {
     console.error("Error fetching transaction status:", error);
@@ -1224,7 +1230,7 @@ async function refreshFinishedTransactions() {
                           transaction.transaction_id
                         }">
                         <input 
-                          type="number" 
+                          type="text" 
                           class="form-control transfer-out-input" 
                           name="transfer_out_kilos" 
                           required 
@@ -1238,7 +1244,7 @@ async function refreshFinishedTransactions() {
                 transaction.scrap
                   ? transaction.scrap
                   : `<input 
-                        type="number" 
+                        type="text" 
                         form="insert-transfer-out-scrap-remarks-${
                           transaction.transaction_id
                         }" 

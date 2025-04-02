@@ -27,7 +27,7 @@ include_once('../../includes/header/header-main.php');
             <thead>
                 <th class="text-center" scope="col">Project</th>
                 <th class="text-center" scope="col">Description</th>
-                <th class="text-center" scope="col">...</th>
+                <th class="text-center" scope="col">Action</th>
             </thead>
             <tbody id="project-list">
 

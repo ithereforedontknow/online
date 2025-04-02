@@ -22,6 +22,7 @@
         </div>
     </div>
     <div class="offcanvas-body p-3">
+        <button id="clearNotificationsButton" class="btn btn-secondary btn-sm mb-3">Mark All As Read</button>
         <div id="notificationList" class="list-group list-group-flush">
             <!-- Notifications will be dynamically loaded here -->
         </div>

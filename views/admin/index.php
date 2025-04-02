@@ -188,7 +188,7 @@ $unloading = $stmtUnloading->fetch(PDO::FETCH_ASSOC);
                 <option value="year" selected>This Year</option>
               </select>
             </div>
-            <canvas id="transactionChart" height="350" width="500"></canvas>
+            <canvas id="transactionChart" height="445" width="500"></canvas>
           </div>
         </div>
       </div>

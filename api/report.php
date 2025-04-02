@@ -1279,7 +1279,8 @@ ORDER BY transaction.transaction_id DESC";
                 $textColor = '34495E';
 
                 // Title Styling
-                $sheet->setCellValue('A1', strtoupper($status) . ' REPORT');
+                $title = $status ? strtoupper($status) . ' REPORT' : 'ALL REPORT';
+                $sheet->setCellValue('A1', $title);
                 $sheet->mergeCells('A1:K1');
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => [
@@ -1475,7 +1476,8 @@ ORDER BY transaction.transaction_id DESC";
                 // Title
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
                 $pdf->SetFont('helvetica', 'B', 16);
-                $pdf->Cell(0, 15, strtoupper($status) . ' REPORT', 0, 1, 'C');
+                $title = $status ? strtoupper($status) . ' REPORT' : 'ALL REPORT';
+                $pdf->Cell(0, 15, $title, 0, 1, 'C');
 
                 // As Of
                 $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
@@ -1953,7 +1955,7 @@ ORDER BY transaction.transaction_id DESC";
 
             if ($reportFormat === 'excel') {
                 // Updated query with headers and processing
-                $query = "SELECT transaction.to_reference, origin.origin_name, diverted.remarks FROM diverted INNER JOIN transaction ON diverted.transaction_id = transaction.transaction_id INNER JOIN origin ON diverted.new_destination = origin.origin_id WHERE diverted.new_destination = :branch OR :branch IS NULL AND transaction.created_at BETWEEN :dateFrom AND :dateTo";
+                $query = "SELECT transaction.to_reference, origin.origin_name, diverted.remarks FROM diverted INNER JOIN transaction ON diverted.transaction_id = transaction.transaction_id INNER JOIN origin ON diverted.new_destination = origin.origin_id WHERE diverted.new_destination = :branch OR :branch IS NULL AND transaction.created_at BETWEEN :dateFrom AND :dateTo ORDER BY transaction.transaction_id DESC";
 
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute(['branch' => $branch, 'dateFrom' => $dateFrom, 'dateTo' => $dateTo]);
@@ -2095,7 +2097,7 @@ ORDER BY transaction.transaction_id DESC";
             } else {
                 // Query remains the same as your original code
                 // Updated query with headers and processing
-                $query = "SELECT transaction.to_reference, origin.origin_name, diverted.remarks FROM diverted INNER JOIN transaction ON diverted.transaction_id = transaction.transaction_id INNER JOIN origin ON diverted.new_destination = origin.origin_id WHERE diverted.new_destination = :branch OR :branch IS NULL AND transaction.created_at BETWEEN :dateFrom AND :dateTo";
+                $query = "SELECT transaction.to_reference, origin.origin_name, diverted.remarks FROM diverted INNER JOIN transaction ON diverted.transaction_id = transaction.transaction_id INNER JOIN origin ON diverted.new_destination = origin.origin_id WHERE diverted.new_destination = :branch OR :branch IS NULL AND transaction.created_at BETWEEN :dateFrom AND :dateTo ORDER BY transaction.transaction_id DESC";
 
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute(['branch' => $branch, 'dateFrom' => $dateFrom, 'dateTo' => $dateTo]);
@@ -2233,10 +2235,12 @@ ORDER BY transaction.transaction_id DESC";
         try {
             $reportFormat = $data['reportFormat'];
             $signature = $data['signature'];
+            $dateTo = $data['dateTo'];
+            $dateFrom = $data['dateFrom'];
 
             if ($reportFormat === 'excel') {
                 // Updated query with headers and processing
-                $query = "SELECT * FROM settings_logs";
+                $query = "SELECT * FROM settings_logs WHERE created_at BETWEEN '$dateFrom' AND '$dateTo' ORDER BY created_at DESC";
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute();
                 $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2365,7 +2369,7 @@ ORDER BY transaction.transaction_id DESC";
                 exit;
             } else {
                 // Updated query with headers and processing
-                $query = "SELECT * FROM settings_logs";
+                $query = "SELECT * FROM settings_logs WHERE created_at BETWEEN '$dateFrom' AND '$dateTo' ORDER BY created_at DESC";
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute();
                 $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2401,7 +2405,7 @@ ORDER BY transaction.transaction_id DESC";
                 // Title
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
                 $pdf->SetFont('helvetica', 'B', 16);
-                $pdf->Cell(0, 15, 'Settings Logs Report', 0, 1, 'C');
+                $pdf->Cell(0, 15, 'Settings Logs Report as of ' . date('F j, Y', strtotime($dateTo)), 0, 1, 'C');
 
                 // Calculate column widths (matched with headers)
                 $colWidths = [
@@ -2482,10 +2486,12 @@ ORDER BY transaction.transaction_id DESC";
         try {
             $reportFormat = $data['reportFormat'];
             $signature = $data['signature'];
+            $dateFrom = $data['dateFrom'];
+            $dateTo = $data['dateTo'];
 
             if ($reportFormat === 'excel') {
                 // Updated query with headers and processing
-                $query = "SELECT * FROM sms_log";
+                $query = "SELECT * FROM sms_log WHERE created_at BETWEEN '$dateFrom' AND '$dateTo' ORDER BY created_at DESC";
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute();
                 $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2501,7 +2507,7 @@ ORDER BY transaction.transaction_id DESC";
                 $textColor = '34495E';
 
                 // Title Styling
-                $sheet->setCellValue('A1', 'SMS LOGS');
+                $sheet->setCellValue('A1', 'SMS LOGS Report as of ' . date('F j, Y', strtotime($dateTo)));
                 $sheet->mergeCells('A1:D1');
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => [
@@ -2614,7 +2620,7 @@ ORDER BY transaction.transaction_id DESC";
                 exit;
             } else {
                 // Updated query with headers and processing
-                $query = "SELECT * FROM sms_log";
+                $query = "SELECT * FROM sms_log WHERE created_at BETWEEN '$dateFrom' AND '$dateTo' ORDER BY created_at DESC";
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute();
                 $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2650,7 +2656,7 @@ ORDER BY transaction.transaction_id DESC";
                 // Title
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
                 $pdf->SetFont('helvetica', 'B', 16);
-                $pdf->Cell(0, 15, 'SMS Logs Report', 0, 1, 'C');
+                $pdf->Cell(0, 15, 'SMS Logs Report as of ' . date('F j, Y', strtotime($dateTo)), 0, 1, 'C');
 
                 // Calculate column widths (matched with headers)
                 $colWidths = [
@@ -2731,10 +2737,12 @@ ORDER BY transaction.transaction_id DESC";
         try {
             $reportFormat = $data['reportFormat'];
             $signature = $data['signature'];
+            $dateFrom = $data['dateFrom'];
+            $dateTo = $data['dateTo'];
 
             if ($reportFormat === 'excel') {
                 // Updated query with headers and processing
-                $query = "SELECT * FROM transaction_log INNER JOIN transaction on transaction_log.transaction_id = transaction.transaction_id";
+                $query = "SELECT * FROM transaction_log INNER JOIN transaction on transaction_log.transaction_id = transaction.transaction_id WHERE transaction_log.created_at BETWEEN '$dateFrom' AND '$dateTo' ORDER BY transaction_log.created_at DESC";
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute();
                 $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2750,7 +2758,7 @@ ORDER BY transaction.transaction_id DESC";
                 $textColor = '34495E';
 
                 // Title Styling
-                $sheet->setCellValue('A1', 'EVENT LOGS');
+                $sheet->setCellValue('A1', 'EVENT LOGS - As Of: ' . date('Y-m-d'));
                 $sheet->mergeCells('A1:D1');
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => [
@@ -2863,7 +2871,7 @@ ORDER BY transaction.transaction_id DESC";
                 exit;
             } else {
                 // Updated query with headers and processing
-                $query = "SELECT * FROM transaction_log INNER JOIN transaction on transaction_log.transaction_id = transaction.transaction_id";
+                $query = "SELECT * FROM transaction_log INNER JOIN transaction on transaction_log.transaction_id = transaction.transaction_id WHERE transaction_log.created_at BETWEEN '$dateFrom' AND '$dateTo' ORDER BY transaction_log.created_at DESC";
                 $stmt = $this->conn->prepare($query);
                 $stmt->execute();
                 $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2899,7 +2907,7 @@ ORDER BY transaction.transaction_id DESC";
                 // Title
                 $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
                 $pdf->SetFont('helvetica', 'B', 16);
-                $pdf->Cell(0, 15, 'Settings Logs Report', 0, 1, 'C');
+                $pdf->Cell(0, 15, 'Settings Logs Report as of ' . date('F j, Y', strtotime($dateFrom)) . ' - ' . date('F j, Y', strtotime($dateTo)), 0, 1, 'C');
 
                 // Calculate column widths (matched with headers)
                 $colWidths = [
@@ -2975,6 +2983,279 @@ ORDER BY transaction.transaction_id DESC";
             $this->sendResponse(false, 'Internal server error', $e->getMessage());
         }
     }
+    public function user($data)
+    {
+        try {
+            $reportFormat = $data['reportFormat'];
+            $signature = $data['signature'];
+            $dateFrom = $data['dateFrom'];
+            $dateTo = $data['dateTo'];
+            $user = $data['user'] === 'all' ? null : $data['user'];
+
+            if ($reportFormat === 'excel') {
+                // Updated query with headers and processing
+                // Determine if the user filter should be applied
+                $user = $data['user'] === 'all' ? null : $data['user'];
+
+                // Build the query dynamically based on the user filter
+                $query = "SELECT * 
+          FROM user_logs 
+          WHERE 1=1"; // Start with a true condition for easier dynamic filtering
+
+                if ($user !== null) {
+                    $query .= " AND username = '$user'"; // Add username filter only if $user is not null
+                }
+
+                $query .= " AND timestamp BETWEEN '$dateFrom' AND '$dateTo' ORDER by timestamp DESC"; // Add date range filter
+                $stmt = $this->conn->prepare($query);
+                $stmt->execute();
+                $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                // Clear any previous output or errors
+                ob_clean();
+
+                $spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
+
+                // Professional Color Scheme
+                $primaryColor = '2C3E50';
+                $headerColor = 'ECF0F1';
+                $textColor = '34495E';
+
+                // Title Styling
+                $sheet->setCellValue('A1', 'USER LOGS AS OF ' . date('F j, Y', strtotime($dateFrom)) . ' - ' . date('F j, Y', strtotime($dateTo)));
+                $sheet->mergeCells('A1:D1');
+                $sheet->getStyle('A1')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'size' => 16,
+                        'color' => ['rgb' => $primaryColor]
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'color' => ['rgb' => $headerColor]
+                    ]
+                ]);
+
+
+
+                // Column Headers
+                $headers = [
+                    'Username',
+                    'Action',
+                    'Created At',
+                ];
+
+                $sheet->fromArray($headers, NULL, 'A3');
+                $sheet->getStyle('A3:C3')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => $primaryColor]
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'color' => ['rgb' => $headerColor]
+                    ],
+                    'borders' => [
+                        'bottom' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THICK,
+                            'color' => ['rgb' => $primaryColor]
+                        ]
+                    ]
+                ]);
+
+                // Populate Data Rows
+                $rowIndex = 4;
+                foreach ($settings as $row) {
+                    $sheet->fromArray([
+                        $row['username'],
+                        $row['action'],
+                        $row['timestamp'],
+                    ], NULL, 'A' . $rowIndex++);
+                }
+
+                // Advanced Column Formatting
+                foreach (range('A', 'C') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                    $sheet->getStyle($col . '3:' . $col . $rowIndex)->applyFromArray([
+                        'font' => ['color' => ['rgb' => $textColor]],
+                        'alignment' => [
+                            'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                            'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                        ]
+                    ]);
+                }
+
+                // Number Formatting with Comma Separators
+                $sheet->getStyle("C4:C{$rowIndex}")->getNumberFormat()
+                    ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+
+                // Table Styling
+                $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+                $sheet->getStyle($sheet->calculateWorksheetDimension())->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => $primaryColor]
+                        ]
+                    ],
+                    'alignment' => ['wrapText' => true]
+                ]);
+
+                // Footer with Timestamp
+                $sheet->setCellValue("A{$rowIndex}", "Generated on: " . date('Y-m-d H:i:s'));
+                $sheet->mergeCells("A{$rowIndex}:C{$rowIndex}");
+                $sheet->getStyle("A{$rowIndex}")->applyFromArray([
+                    'font' => [
+                        'italic' => true,
+                        'size' => 9,
+                        'color' => ['rgb' => $textColor]
+                    ],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT]
+                ]);
+
+                // Output File
+                $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+                // Set headers
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment; filename="' . rawurlencode('User_Report_' . date('Y-m-d_His') . '.xlsx') . '"');
+                header('Cache-Control: max-age=0');
+
+                // Disable any buffering to prevent memory issues
+                if (ob_get_length()) ob_end_clean();
+
+                // Save directly to output
+                $writer->save('php://output');
+                exit;
+            } else {
+                // Updated query with headers and processing
+                // Determine if the user filter should be applied
+                $user = $data['user'] === 'all' ? null : $data['user'];
+
+                // Build the query dynamically based on the user filter
+                $query = "SELECT * 
+          FROM user_logs 
+          WHERE 1=1"; // Start with a true condition for easier dynamic filtering
+
+                if ($user !== null) {
+                    $query .= " AND username = '$user'"; // Add username filter only if $user is not null
+                }
+
+                $query .= " AND timestamp BETWEEN '$dateFrom' AND '$dateTo' ORDER BY timestamp DESC"; // Add date range filter
+                $stmt = $this->conn->prepare($query);
+                $stmt->execute();
+                $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Color Scheme
+                $primaryColor = [44, 62, 80];     // Dark Blue-Gray
+                $headerColor = [236, 240, 241];   // Light Gray
+                $textColor = [52, 73, 94];        // Muted Dark Blue
+
+                // Make sure no output has been sent before this point
+                ob_clean();
+
+                // Create PDF
+                $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+                $pdf->SetCreator(PDF_CREATOR);
+                $pdf->SetAuthor($signature);
+                $pdf->SetTitle('User Logs');
+
+                // Set up page
+                $pdf->SetAutoPageBreak(TRUE, 15);
+                $pdf->SetPrintHeader(false);
+                $pdf->SetPrintFooter(false);
+                $pdf->SetMargins(10, 10, 10);
+                $pdf->AddPage();
+
+                // Logo
+                $imagePath = '../assets/img/ulpi agoo.png';
+                if (file_exists($imagePath)) {
+                    $pdf->Image($imagePath, ($pdf->getPageWidth() - 100) / 2, 10, 100);
+                    $pdf->Ln(40);
+                }
+
+                // Title
+                $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
+                $pdf->SetFont('helvetica', 'B', 16);
+                $pdf->Cell(0, 15, 'User Logs Report as of ' . date('Y-m-d H:i:s'), 0, 1, 'C');
+
+                // Calculate column widths (matched with headers)
+                $colWidths = [
+                    40,  // Username
+                    80,  // Action (adjusted for longer text)
+                    40   // Timestamp
+                ];
+
+                // Calculate total table width
+                $tableWidth = array_sum($colWidths);
+
+                // Center table horizontally
+                $pdf->SetX(($pdf->getPageWidth() - $tableWidth) / 2);
+
+                // Headers
+                $headers = [
+                    'Username',
+                    'Action',
+                    'Created At'
+                ];
+
+                // Table header styling
+                $pdf->SetFont('helvetica', 'B', 8);
+                $pdf->SetTextColor($primaryColor[0], $primaryColor[1], $primaryColor[2]);
+                $pdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
+                $pdf->SetLineStyle(['width' => 0.5, 'color' => $primaryColor]);
+
+                // Print headers (only on first page)
+                foreach ($headers as $index => $header) {
+                    $pdf->Cell($colWidths[$index], 7, $header, 1, 0, 'C', true);
+                }
+                $pdf->Ln();
+
+                // Data rows
+                $pdf->SetFont('helvetica', '', 7);
+                $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
+
+                foreach ($settings as $row) {
+                    // Check if row will exceed page height
+                    if ($pdf->GetY() + 6 > $pdf->getPageHeight() - 20) {
+                        $pdf->AddPage();
+
+                        // Center table horizontally on new page
+                        $pdf->SetX(($pdf->getPageWidth() - $tableWidth) / 2);
+                    }
+
+                    // Center table horizontally on each row
+                    $pdf->SetX(($pdf->getPageWidth() - $tableWidth) / 2);
+
+                    $fill = ($pdf->GetY() % 2 == 0);
+
+                    // Print row data
+                    $pdf->Cell($colWidths[0], 6, $row['username'], 1, 0, 'C', $fill);
+                    $pdf->Cell($colWidths[1], 6, $row['action'], 1, 0, 'C', $fill);
+                    $pdf->Cell($colWidths[2], 6, $row['timestamp'], 1, 0, 'C', $fill);
+                    $pdf->Ln();
+                }
+
+                // Footer
+                $pdf->Ln(10);
+                $pdf->SetTextColor($textColor[0], $textColor[1], $textColor[2]);
+                $pdf->SetFont('helvetica', 'I', 8);
+                $pdf->Cell(0, 10, 'Signed By: ' . $signature . ' | Page ' . $pdf->getAliasNumPage() . ' of ' . $pdf->getAliasNbPages(), 0, 0, 'R');
+
+                // Output PDF
+                $fileName = 'User_Report_' . date('Y-m-d_His') . '.pdf';
+                $pdf->Output($fileName, 'I');
+                exit;
+            }
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
+            $this->sendResponse(false, 'Internal server error', $e->getMessage());
+        }
+    }
 }
 
 
@@ -2985,9 +3266,13 @@ try {
     }
 
     $reportManager = new reportManager($conn);
-
+    $stmt = $conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+    $stmt->execute([
+        'user_id' => $_SESSION['id'],
+        'username' => $_SESSION['username'],
+        'action' => 'Generated Report: ' . $_POST['action']
+    ]);
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
         $action = $_POST['action'] ?? '';
         switch ($action) {
             case 'tally-in':
@@ -3016,6 +3301,9 @@ try {
                 break;
             case 'event':
                 $reportManager->event($_POST);
+                break;
+            case 'user':
+                $reportManager->user($_POST);
                 break;
             default:
                 $reportManager->sendResponse(false, 'Invalid action');

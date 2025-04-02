@@ -30,7 +30,14 @@ class TransactionManager
     public function getTransactionStatus()
     {
         $sql = "SELECT plate_number, transaction.status, driver.driver_fname, driver.driver_lname, helper.helper_fname, helper.helper_lname, arrival.arrival_time, unloading.time_of_entry, 
-        .ordinal, queue.shift, queue.schedule, queue.transfer_in_line FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id INNER JOIN driver ON transaction.driver_id = driver.driver_id INNER JOIN helper ON transaction.helper_id = helper.helper_id LEFT JOIN queue on queue.transaction_id = transaction.transaction_id LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id WHERE transaction.status != 'cancelled' AND transaction.status != 'done' AND transaction.status != 'diverted'";
+        queue.ordinal, queue.shift, queue.schedule, queue.transfer_in_line 
+        FROM transaction INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id 
+        INNER JOIN driver ON transaction.driver_id = driver.driver_id 
+        INNER JOIN helper ON transaction.helper_id = helper.helper_id 
+        LEFT JOIN queue on queue.transaction_id = transaction.transaction_id 
+        LEFT JOIN arrival on arrival.transaction_id = transaction.transaction_id 
+        LEFT JOIN unloading on unloading.transaction_id = transaction.transaction_id 
+        WHERE transaction.status != 'cancelled' AND transaction.status != 'done' AND transaction.status != 'diverted'";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -39,7 +46,7 @@ class TransactionManager
             $this->sendResponse(true, 'Success', $transactions);
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
-            $this->sendResponse(false, 'Internal server error');
+            $this->sendResponse(false, 'Internal server error', $e->getMessage());
         }
     }
     public function addBranchTransaction($data)
@@ -140,7 +147,14 @@ class TransactionManager
                 ':created_by' =>  $data['created_by'],
                 ':details' => $data['to-reference'] . ' Transaction created by ' . $data['created_by'] . ' from ' . $origin_name . ' has been departed',
             ]);
+
             $this->conn->commit();
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Create Transaction',
+            ]);
             $this->sendResponse(true, 'Transaction added successfully');
         } catch (Exception $e) {
             $this->conn->rollBack();
@@ -151,13 +165,31 @@ class TransactionManager
 
     public function getTransactions(string $status): void
     {
+        if ($status === 'cancelled') {
+            $cancelledOrDivertedQuery = 'SELECT * FROM transaction
+            INNER JOIN hauler ON transaction.hauler_id = hauler.hauler_id
+            INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id
+            INNER JOIN project ON transaction.project_id = project.project_id
+            INNER JOIN origin ON transaction.origin_id = origin.origin_id
+            WHERE transaction.status IN (:cancelled, :diverted)
+            ORDER BY transaction.updated_at DESC';
+
+            try {
+                $stmt = $this->conn->prepare($cancelledOrDivertedQuery);
+                $stmt->execute(['cancelled' => 'cancelled', 'diverted' => 'diverted']);
+                $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $this->sendResponse(true, 'Transactions retrieved successfully', ['transactions' => $transactions]);
+            } catch (PDOException $e) {
+                $this->sendResponse(false, 'Error retrieving transactions');
+            }
+        }
         $sql = 'SELECT * FROM transaction
                 INNER JOIN hauler ON transaction.hauler_id = hauler.hauler_id
                 INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id
                 INNER JOIN project ON transaction.project_id = project.project_id
                 INNER JOIN origin ON transaction.origin_id = origin.origin_id
                 WHERE transaction.status = :status
-                ORDER BY transaction.transaction_id DESC';
+                ORDER BY transaction.updated_at DESC';
         try {
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['status' => $status]);
@@ -254,12 +286,18 @@ class TransactionManager
                 ':transaction_id' => $transaction_id,
                 ':details' => $data['to-reference'] . ' Transaction added by ' . $data['created_by'],
                 ':created_by' => $data['created_by']
+            ]); // Log user login
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Create Transaction',
             ]);
             $this->sendResponse(true, 'Transaction added successfully');
         } catch (PDOException $e) {
             // Log the error (in a production environment, log to a file)
             error_log('Database error: ' . $e->getMessage());
-            $this->sendResponse(false, 'Error adding transaction');
+            $this->sendResponse(false, 'Error adding transaction', $e->getMessage());
         }
     }
     public function updateTranasctionForm($data)
@@ -323,6 +361,12 @@ class TransactionManager
                 ':transaction_id' => $data['transaction_id'],
                 ':details' => $to_reference . ' Transaction updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username'],
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Transaction',
             ]);
             $this->sendResponse(true, 'Transaction updated successfully');
         } catch (PDOException $e) {
@@ -408,7 +452,12 @@ class TransactionManager
                 ':details' => 'Transaction cancelled by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
-
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Cancel Transaction',
+            ]);
             $this->sendResponse(true, 'Transaction cancelled successfully');
         } catch (PDOException $e) {
             // Log the error (in a production environment, log to a file)
@@ -445,6 +494,12 @@ class TransactionManager
                 $this->sendResponse(false, 'Arrival time must be after time of departure');
                 return;
             }
+
+            if (strtotime($arrival_time) >= strtotime(date('Y-m-d H:i:s'))) {
+                $this->sendResponse(false, 'Arrival time cannot be in the future');
+                return;
+            }
+
             $stmt = $this->conn->prepare("INSERT INTO arrival (transaction_id, arrival_time, arrival_date) VALUES (:transaction_id, :arrival_time, :arrival_date)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
@@ -471,8 +526,14 @@ class TransactionManager
             $stmt = $this->conn->prepare("INSERT INTO transaction_log (transaction_id, details, created_by) VALUES (:transaction_id, :details, :created_by)");
             $stmt->execute([
                 ':transaction_id' => $transaction_id,
-                ':details' => $to_reference . ' Transaction added to arrived by ' . $created_by,
+                ':details' => $to_reference . ' Transaction added to arrived by ' . $_SESSION['username'],
                 ':created_by' => $created_by
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Transaction to Arrived',
             ]);
             $this->sendResponse(true, 'Transaction added to arrived successfully');
         } catch (PDOException $e) {
@@ -607,6 +668,7 @@ class TransactionManager
                 'Hauler' => $transaction['hauler_name'] ?? 'N/A',
                 'Number of Bales' => $transaction['no_of_bales'] ?? 'N/A',
                 'Kilos' => $transaction['kilos'] ?? 'N/A'
+
             ];
 
             // Render details with improved formatting
@@ -642,7 +704,7 @@ class TransactionManager
 
     public function getFinishedTransactions()
     {
-        $sql = "SELECT *, transaction.time_of_departure as timeOfDeparture FROM transaction INNER JOIN origin ON transaction.origin_id = origin.origin_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id INNER JOIN queue ON transaction.transaction_id = queue.transaction_id INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id WHERE status = 'done' ORDER BY transaction.transaction_id DESC";
+        $sql = "SELECT *, transaction.time_of_departure as timeOfDeparture FROM transaction INNER JOIN origin ON transaction.origin_id = origin.origin_id INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id INNER JOIN queue ON transaction.transaction_id = queue.transaction_id INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id WHERE status = 'done' ORDER BY transaction.updated_at DESC";
 
         try {
             $stmt = $this->conn->prepare($sql);
@@ -670,6 +732,12 @@ class TransactionManager
                 ':scrap' => $data['scrap'],
                 ':remarks' => $data['remarks'],
                 ':id' => $id
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Added transfer out kilos, scrap and remarks',
             ]);
             $this->sendResponse(true, 'Transaction updated successfully');
         } catch (PDOException $e) {
@@ -727,7 +795,12 @@ class TransactionManager
                 ':remarks' => $data['remarks'],
                 ':id' => $id
             ]);
-
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update finished transaction',
+            ]);
             $this->sendResponse(true, 'Transaction updated successfully');
         } catch (PDOException $e) {
             error_log('Database error: ' . $e->getMessage());
@@ -737,11 +810,58 @@ class TransactionManager
     public function divertTransaction($data)
     {
         try {
+            // Get time of departure
+            $stmt = $this->conn->prepare("SELECT arrival_time FROM transaction INNER JOIN arrival ON transaction.transaction_id = arrival.transaction_id WHERE transaction.transaction_id = :transaction_id");
+            $stmt->execute([
+                ':transaction_id' => $data['transaction_id']
+            ]);
+
+            $arrivalTime = $stmt->fetchColumn();
+
+            if (!$arrivalTime) {
+                $this->sendResponse(false, "Arrival time not found for this transaction");
+            }
             $stmt = $this->conn->prepare("UPDATE transaction SET status = :status WHERE transaction_id = :id");
             $stmt->execute([
                 ':status' => 'diverted',
                 ':id' => $data['transaction_id']
             ]);
+            $arrivalTimeTimestamp = strtotime($arrivalTime);
+            $currentTime = strtotime(date('Y-m-d H:i:s'));
+
+            if (is_numeric($arrivalTimeTimestamp) && is_numeric($currentTime)) {
+                $timeDifference = $currentTime - $arrivalTimeTimestamp;
+
+                // Convert time difference to hours, minutes, and seconds
+                $hours = floor($timeDifference / 3600);
+                $minutes = floor(($timeDifference % 3600) / 60);
+                $seconds = $timeDifference % 60;
+
+                // Get demurrage rate (fetch the latest one based on updated_at)
+                $stmt = $this->conn->prepare("SELECT demurrage FROM demurrage ORDER BY updated_at DESC LIMIT 1");
+                $stmt->execute();
+                $demurrage = $stmt->fetchColumn();
+
+                if ($demurrage === false) {
+                    throw new Exception("Demurrage rate not found");
+                }
+
+                $totalDemurrage = 0;
+                $demurrageRatePerSecond = $demurrage / 3600; // Convert the hourly rate to a per-second rate
+
+                if ($timeDifference > (48 * 3600)) { // 48 hours in seconds
+                    $chargeableSeconds = $timeDifference - (48 * 3600); // Remove the first 48 hours from the calculation
+                    $totalDemurrage = $chargeableSeconds * $demurrageRatePerSecond;
+                }
+                // Update transaction with time spent in waiting area and demurrage
+                $stmt = $this->conn->prepare("UPDATE transaction SET time_spent_waiting_area = ?, demurrage = ? WHERE transaction_id = ?");
+                $stmt->execute([$hours, $totalDemurrage, $data['transaction_id']]);
+
+                $this->sendResponse(true, "Demurrage updated successfully");
+            } else {
+                $this->sendResponse(false, "Invalid arrival time format");
+            }
+
 
             $stmt = $this->conn->prepare("SELECT * FROM transaction WHERE transaction_id = :id");
             $stmt->execute(['id' => $data['transaction_id']]);
@@ -781,7 +901,12 @@ class TransactionManager
                 ':created_by' => $_SESSION['username'],
                 ':details' => $data['to_reference'] . ' Transaction diverted' . ' by ' . $_SESSION['username']
             ]);
-
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Transaction Diverted',
+            ]);
             return $this->sendResponse(true, 'Transaction diverted successfully');
         } catch (PDOException $e) {
             error_log('Database error: ' . $e->getMessage());

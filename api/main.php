@@ -99,10 +99,12 @@ class mainManager
 
             // Main query with pagination and search
             $query = "SELECT 
+            transaction_log.log_id AS log_id,
             transaction_log.transaction_id AS transaction_id, 
             transaction_log.created_at AS created_at,
             transaction_log.details AS details, 
-            transaction.to_reference AS to_reference
+            transaction.to_reference AS to_reference,
+            transaction_log.is_read AS is_read
         " . $baseQuery . $whereClause . "
         ORDER BY 
             transaction_log.log_id DESC
@@ -137,12 +139,35 @@ class mainManager
     {
         try {
             $currentTime = date('Y-m-d H:i:s');
-            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM transaction_log WHERE created_at >= :currentTime");
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM transaction_log WHERE created_at >= :currentTime AND is_read = 0");
             $stmt->bindParam(':currentTime', $currentTime);
             $stmt->execute();
             $transactionCount = $stmt->fetchColumn();
             $this->sendResponse(true, 'Notification count retrieved successfully', ['notification_count' => $transactionCount]);
         } catch (Exception $e) {
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function clearNotifications()
+    {
+        try {
+            $stmt = $this->conn->prepare("UPDATE transaction_log SET is_read = 1 WHERE is_read = 0");
+            $stmt->execute();
+            $this->sendResponse(true, 'Notifications cleared successfully');
+        } catch (Exception $e) {
+            $this->sendResponse(false, 'Internal server error');
+        }
+    }
+    public function markNotificationAsRead()
+    {
+        try {
+            $notificationId = $_POST['notification_id'];
+            $stmt = $this->conn->prepare("UPDATE transaction_log SET is_read = 1 WHERE log_id = :notificationId");
+            $stmt->bindParam(':notificationId', $notificationId);
+            $stmt->execute();
+            $this->sendResponse(true, 'Notification marked as read');
+        } catch (Exception $e) {
+            error_log('Unhandled error: ' . $e->getMessage());
             $this->sendResponse(false, 'Internal server error');
         }
     }
@@ -168,6 +193,12 @@ try {
                 break;
             case 'get-notification-count':
                 $mainManager->getNotificationCount();
+                break;
+            case 'clear-notifications':
+                $mainManager->clearNotifications();
+                break;
+            case 'mark-notification-read':
+                $mainManager->markNotificationAsRead($_POST['notification_id']);
                 break;
             default:
                 $mainManager->sendResponse(false, 'Invalid action');

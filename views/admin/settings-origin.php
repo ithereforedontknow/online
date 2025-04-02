@@ -27,7 +27,7 @@ include_once('../../includes/header/header-admin.php');
             <thead>
                 <th class="text-center" scope="col">Origin Name</th>
                 <th class="text-center" scope="col">Code</th>
-                <th class="text-center" scope="col">...</th>
+                <th class="text-center" scope="col">Action</th>
             </thead>
             <tbody id="origin-list">
 

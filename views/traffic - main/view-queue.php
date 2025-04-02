@@ -4,7 +4,7 @@ include_once('../../includes/header/header-main.php');
 <div class="content bg-light" id="content">
     <div class="container-fluid">
         <!-- Header -->
-        <div class="container bg-white p-4 rounded shadow-sm">
+        <div class=" bg-white p-4 rounded shadow-sm">
             <a class="btn btn-primary" href="queue.php">Go Back</a>
             <div class="d-flex justify-content-center">
                 <img

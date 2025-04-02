@@ -28,7 +28,7 @@ class settingsManager
     public function getHaulers()
     {
         try {
-            $sql = "SELECT * FROM hauler INNER JOIN origin ON hauler.branch = origin.origin_id";
+            $sql = "SELECT * FROM hauler INNER JOIN origin ON hauler.branch = origin.origin_id ORDER BY hauler.created_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $haulers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -62,6 +62,12 @@ class settingsManager
             $stmt->execute([
                 ':details' => $name . ' Hauler added by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Hauler'
             ]);
             $this->sendResponse(true, 'Hauler added successfully');
         } catch (Exception $e) {
@@ -99,7 +105,12 @@ class settingsManager
                 ':details' => $name . ' Hauler updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
-
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Hauler'
+            ]);
             $this->sendResponse(true, 'Hauler updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -126,6 +137,12 @@ class settingsManager
                 ':details' => 'Hauler status updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Hauler'
+            ]);
             $this->sendResponse(true, 'Hauler status updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -135,7 +152,7 @@ class settingsManager
     public function getVehicles()
     {
         try {
-            $sql = "SELECT vehicle.*, hauler.hauler_name, hauler.hauler_id FROM vehicle INNER JOIN hauler ON vehicle.hauler_id = hauler.hauler_id";
+            $sql = "SELECT vehicle.*, hauler.hauler_name, hauler.hauler_id FROM vehicle INNER JOIN hauler ON vehicle.hauler_id = hauler.hauler_id ORDER BY vehicle.created_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $vehicles = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -145,7 +162,7 @@ class settingsManager
             $this->sendResponse(false, 'Internal server error');
         }
     }
-    public function addVehicle($plate_number, $truck_type, $hauler_id)
+    public function addVehicle($plate_number, $truck_type, $hauler_id, $length, $width, $height)
     {
         try {
             $sql = "SELECT * FROM vehicle WHERE plate_number = :plate_number";
@@ -157,25 +174,33 @@ class settingsManager
                 $this->sendResponse(false, 'Plate number already exists!');
                 return;
             }
-            $sql = "INSERT INTO vehicle (plate_number, truck_type, hauler_id) VALUES (:plate_number, :truck_type, :hauler_id)";
+            $sql = "INSERT INTO vehicle (plate_number, truck_type, hauler_id, length, width, height) VALUES (:plate_number, :truck_type, :hauler_id, :length, :width, :height)";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 'plate_number' => $plate_number,
                 'truck_type' => $truck_type,
-                'hauler_id' => $hauler_id
+                'hauler_id' => $hauler_id,
+                'length' => $length,
+                'width' => $width,
+                'height' => $height,
             ]);
             $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('vehicle', :details, :created_by)");
             $stmt->execute([
                 ':details' => $plate_number . ' Vehicle added by ' . $_SESSION['username'],
-                ':created_by' => $_SESSION['username']
+                ':created_by' => $_SESSION['username'],
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Vehicle'
             ]);
             $this->sendResponse(true, 'Vehicle added successfully');
         } catch (Exception $e) {
-            error_log('Unhandled error: ' . $e->getMessage());
-            $this->sendResponse(false, 'Internal server error');
+            $this->sendResponse(false, 'Internal server error' + $e->getMessage());
         }
     }
-    public function updateVehicle($id, $plate_number, $truck_type, $hauler_id)
+    public function updateVehicle($id, $plate_number, $truck_type, $hauler_id, $length, $width, $height)
     {
         try {
             $sql = "SELECT * FROM vehicle WHERE plate_number = :plate_number AND vehicle_id != :id";
@@ -189,18 +214,27 @@ class settingsManager
                 $this->sendResponse(false, 'Plate number already exists! Please choose a different plate number.');
                 return;
             }
-            $sql = "UPDATE vehicle SET plate_number = :plate_number, truck_type = :truck_type, hauler_id = :hauler_id WHERE vehicle_id = :id";
+            $sql = "UPDATE vehicle SET plate_number = :plate_number, truck_type = :truck_type, hauler_id = :hauler_id, length = :length, width = :width, height = :height WHERE vehicle_id = :id";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 'plate_number' => $plate_number,
                 'truck_type' => $truck_type,
                 'hauler_id' => $hauler_id,
+                'length' => $length,
+                'width' => $width,
+                'height' => $height,
                 'id' => $id
             ]);
             $stmt = $this->conn->prepare("INSERT INTO settings_logs (settings_name, details, created_by) VALUES ('vehicle', :details, :created_by)");
             $stmt->execute([
                 ':details' => $plate_number . ' Vehicle updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Vehicle'
             ]);
             $this->sendResponse(true, 'Vehicle updated successfully');
         } catch (Exception $e) {
@@ -211,7 +245,7 @@ class settingsManager
     public function getDrivers()
     {
         try {
-            $sql = "SELECT driver.driver_id, driver.driver_fname, driver.driver_lname, driver.driver_mname, driver.driver_phone, hauler.hauler_name, driver.status, origin.origin_name, hauler.hauler_id FROM driver INNER JOIN hauler ON driver.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id";
+            $sql = "SELECT driver.driver_id, driver.driver_fname, driver.driver_lname, driver.driver_mname, driver.driver_phone, hauler.hauler_name, driver.status, origin.origin_name, hauler.hauler_id FROM driver INNER JOIN hauler ON driver.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id ORDER BY driver.created_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $drivers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -224,7 +258,7 @@ class settingsManager
     public function getHelpers()
     {
         try {
-            $sql = "SELECT helper.helper_id, helper.helper_fname, helper.helper_lname, helper.helper_mname, helper.helper_phone, hauler.hauler_name, helper.status, origin.origin_name, hauler.hauler_id FROM helper INNER JOIN hauler ON helper.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id";
+            $sql = "SELECT helper.helper_id, helper.helper_fname, helper.helper_lname, helper.helper_mname, helper.helper_phone, hauler.hauler_name, helper.status, origin.origin_name, hauler.hauler_id FROM helper INNER JOIN hauler ON helper.hauler_id = hauler.hauler_id INNER JOIN origin ON hauler.branch = origin.origin_id ORDER BY helper.created_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $helpers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -270,6 +304,12 @@ class settingsManager
             $stmt->execute([
                 ':details' => $driver_fname . ' Driver added by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Driver'
             ]);
             $this->sendResponse(true, 'Driver added successfully');
         } catch (Exception $e) {
@@ -317,6 +357,12 @@ class settingsManager
                 ':details' => $driver_fname . ' Driver updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Driver'
+            ]);
             $this->sendResponse(true, 'Driver updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -360,6 +406,12 @@ class settingsManager
             $stmt->execute([
                 ':details' => $helper_fname . ' Helper added by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Helper'
             ]);
             $this->sendResponse(true, 'Helper added successfully');
         } catch (Exception $e) {
@@ -407,6 +459,12 @@ class settingsManager
                 ':details' => $helper_fname . ' Helper updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Helper'
+            ]);
             $this->sendResponse(true, 'Helper updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -416,7 +474,7 @@ class settingsManager
     public function getProjects()
     {
         try {
-            $sql = "SELECT * FROM project";
+            $sql = "SELECT * FROM project ORDER BY project.created_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -449,6 +507,12 @@ class settingsManager
                 ':details' => $project_name . ' Project added by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Project'
+            ]);
             $this->sendResponse(true, 'Project added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -480,6 +544,12 @@ class settingsManager
                 ':details' => $project_name . ' Project updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Project'
+            ]);
             $this->sendResponse(true, 'Project updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -489,7 +559,7 @@ class settingsManager
     public function getOrigins()
     {
         try {
-            $sql = "SELECT * FROM origin";
+            $sql = "SELECT * FROM origin ORDER BY origin.created_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $origins = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -522,6 +592,12 @@ class settingsManager
                 ':details' => $origin_name . ' Origin added by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Add Origin'
+            ]);
             $this->sendResponse(true, 'Origin added successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -552,6 +628,12 @@ class settingsManager
             $stmt->execute([
                 ':details' => $origin_name . ' Origin updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Origin'
             ]);
             $this->sendResponse(true, 'Origin updated successfully');
         } catch (Exception $e) {
@@ -585,6 +667,12 @@ class settingsManager
                 ':details' => $demurrage . ' pesos' . ' Demurrage updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Demurrage'
+            ]);
             $this->sendResponse(true, 'Demurrage updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -604,6 +692,12 @@ class settingsManager
             $stmt->execute([
                 ':details' => 'Driver status updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Driver'
             ]);
             $this->sendResponse(true, 'Driver status updated successfully');
         } catch (Exception $e) {
@@ -626,6 +720,12 @@ class settingsManager
                 ':details' => 'Helper status updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Helper'
+            ]);
             $this->sendResponse(true, 'Helper status updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -646,6 +746,12 @@ class settingsManager
             $stmt->execute([
                 ':details' => 'Vehicle status updated by ' . $_SESSION['username'],
                 ':created_by' => $_SESSION['username']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Update Vehicle'
             ]);
             $this->sendResponse(true, 'Vehicle status updated successfully');
         } catch (Exception $e) {
@@ -695,14 +801,20 @@ try {
                 $plate_number = $_POST['plate_number'] ?? null;
                 $truck_type = $_POST['truck_type'] ?? null;
                 $hauler_id = $_POST['hauler_id'] ?? null;
-                $settingsManager->addVehicle($plate_number, $truck_type, $hauler_id);
+                $length = $_POST['length'] ?? null;
+                $width = $_POST['width'] ?? null;
+                $height = $_POST['height'] ?? null;
+                $settingsManager->addVehicle($plate_number, $truck_type, $hauler_id, $length, $width, $height);
                 break;
             case 'update vehicle':
                 $id = $_POST['vehicle_id'] ?? null;
                 $plate_number = $_POST['plate_number'] ?? null;
                 $truck_type = $_POST['truck_type'] ?? null;
                 $hauler_id = $_POST['hauler_id'] ?? null;
-                $settingsManager->updateVehicle($id, $plate_number, $truck_type, $hauler_id);
+                $length = $_POST['length'] ?? null;
+                $width = $_POST['width'] ?? null;
+                $height = $_POST['height'] ?? null;
+                $settingsManager->updateVehicle($id, $plate_number, $truck_type, $hauler_id, $length, $width, $height);
                 break;
             case 'list drivers':
                 $settingsManager->getDrivers();
@@ -804,7 +916,8 @@ try {
     error_log('Unhandled error: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'Internal server error'
+        'message' => 'Internal server error',
+        'data' => $e->getMessage()
     ]);
     exit;
 }

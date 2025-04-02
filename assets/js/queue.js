@@ -179,6 +179,8 @@ async function refreshQueueList() {
                       onclick='viewQueue(${JSON.stringify(transaction)})'
                       style="cursor: pointer;">
                         <td class="text-center">${transaction.queue_number}</td>
+                        <td class="text-center">${transaction.to_reference}</td>
+                        <td class="text-center">${transaction.project_name}</td>
                         <td class="text-center">${transaction.plate_number}</td>
                         <td class="text-center">${transaction.ordinal}</td>
                         <td class="text-center">${transaction.shift}</td>
@@ -248,7 +250,9 @@ async function refreshToEnterList() {
             // Return the row HTML
             return `<tr"
                       style="cursor: pointer;">
+                      <td class="text-center">${transaction.to_reference}</td>
                         <td class="text-center">${transaction.plate_number}</td>
+                        <td class="text-center">${transaction.project_name}</td>
                         <td class="text-center" id="${timerId}">
                         Loading...
                         </td>
@@ -388,7 +392,7 @@ $("#confirm-enter-queue-form").submit(async function (e) {
       $("#enterQueueModal").modal("hide");
     } else {
       Swal.fire({
-        icon: "info",
+        icon: "error",
         text: response.message,
         showConfirmButton: false,
         timer: 1500,

@@ -68,6 +68,15 @@ function login()
             'encoder' => './views/encoder/index.php'
         ];
 
+        // Log user login
+        $stmt = $conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+        $stmt->execute([
+            'user_id' => $user['id'],
+            'username' => $user['username'],
+            'action' => 'Login'
+        ]);
+
+
         // Send response with redirect
         $redirect = $redirects[$user['userlevel']] ?? null;
         sendResponse(true, $user['userlevel'], $redirect);
@@ -80,8 +89,18 @@ function login()
 
 function logout()
 {
+    global $conn;
+    // Log user logout
+    $stmt = $conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+    $stmt->execute([
+        'user_id' => $_SESSION['id'],
+        'username' => $_SESSION['username'],
+        'action' => 'Logout'
+    ]);
+
     // Unset all session variables
     $_SESSION = [];
+
 
     // Destroy the session
     session_destroy();

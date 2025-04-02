@@ -70,6 +70,12 @@ include_once('../../includes/header/header-admin.php');
                         <p class="mt-3">Backup & Restore</p>
                     </a>
                 </div>
+                <div class="col-2 text-center">
+                    <a class="text-decoration-none" href="settings-audit.php" style="color: #1b3667">
+                        <i class="fa-solid fa-list-ul fa-2xl"></i>
+                        <p class="mt-3">Audit Logs</p>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

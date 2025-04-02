@@ -1,5 +1,5 @@
 <?php
-include_once('../../includes/header/header-admin.php');
+include_once('../../includes/header/header-main.php');
 ?>
 <div class="content" id="content">
 

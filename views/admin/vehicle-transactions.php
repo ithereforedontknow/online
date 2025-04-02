@@ -38,7 +38,7 @@ include_once('../../includes/header/header-admin.php');
                                     <a class="page-link pagination-nav" href="#">Arrived</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link pagination-nav" href="#">Cancelled</a>
+                                    <a class="page-link pagination-nav" href="#">Cancelled/Diverted</a>
                                 </li>
                             </ul>
                         </nav>

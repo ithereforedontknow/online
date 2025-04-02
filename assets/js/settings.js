@@ -16,7 +16,7 @@ const settingsManager = {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.message,
+        text: error,
         showConfirmButton: false,
         timer: 1500,
       });
@@ -48,6 +48,9 @@ function editVehicle(vehicle) {
   $("#edit-plate-no").val(vehicle.plate_number);
   $("#edit-hauler").val(vehicle.hauler_id);
   $("#edit-truck-type").val(vehicle.truck_type);
+  $("#edit-truck-length").val(vehicle.length);
+  $("#edit-truck-width").val(vehicle.width);
+  $("#edit-truck-height").val(vehicle.height);
   openModal("#editVehicleModal");
 }
 function editDriver(driver) {
@@ -176,6 +179,9 @@ $("#add-vehicle").submit(async function (e) {
       plate_number: $("#add-plate-no").val(),
       hauler_id: $("#add-hauler").val(),
       truck_type: $("#add-truck-type").val(),
+      length: $("#add-truck-length").val(),
+      width: $("#add-truck-width").val(),
+      height: $("#add-truck-height").val(),
     });
     if (response.success) {
       refreshVehicleList();
@@ -183,7 +189,7 @@ $("#add-vehicle").submit(async function (e) {
     }
   } catch (error) {
     console.error("Error creating vehicle:", error);
-    showError("An error occurred while creating the vehicle.");
+    showError("An error occurred while creating the vehicle.", error);
   }
 });
 $("#edit-vehicle").submit(async function (e) {
@@ -194,6 +200,9 @@ $("#edit-vehicle").submit(async function (e) {
       plate_number: $("#edit-plate-no").val(),
       hauler_id: $("#edit-hauler").val(),
       truck_type: $("#edit-truck-type").val(),
+      length: $("#edit-truck-length").val(),
+      width: $("#edit-truck-width").val(),
+      height: $("#edit-truck-height").val(),
     });
     if (response.success) {
       refreshVehicleList();

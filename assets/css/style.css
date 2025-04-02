@@ -9,6 +9,15 @@ html,
 body {
   height: 100%;
 }
+.read-notification {
+  opacity: 0.6; /* Reduce opacity for read notifications */
+  background-color: #f8f9fa; /* Light background for read notifications */
+}
+
+.unread-notification {
+  opacity: 1; /* Full opacity for unread notifications */
+  background-color: #ffffff; /* White background for unread notifications */
+}
 .btn-secondary.disabled {
   background-color: #6c757d;
   border-color: #6c757d;

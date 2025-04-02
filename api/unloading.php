@@ -31,7 +31,7 @@ class unloadingManager
     public function getUnloading()
     {
         try {
-            $sql = "SELECT * FROM transaction INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id WHERE transaction.status = 'ongoing'";
+            $sql = "SELECT * FROM transaction INNER JOIN unloading ON transaction.transaction_id = unloading.transaction_id INNER JOIN vehicle ON transaction.vehicle_id = vehicle.vehicle_id WHERE transaction.status = 'ongoing' ORDER BY transaction.updated_at DESC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -127,6 +127,12 @@ class unloadingManager
                 ':details' => $to_reference . ' Unloading details updated by ' . $created_by,
                 ':created_by' => $created_by
             ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Updated unloading details',
+            ]);
             $this->sendResponse(true, 'Unloading updated successfully');
         } catch (Exception $e) {
             error_log('Unhandled error: ' . $e->getMessage());
@@ -179,6 +185,12 @@ class unloadingManager
                 ':transaction_id' => $transaction_id,
                 ':details' => $to_reference . ' Transaction marked as done by ' . $transaction['created_by'],
                 ':created_by' => $transaction['created_by']
+            ]);
+            $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
+            $stmt->execute([
+                'user_id' => $_SESSION['id'],
+                'username' => $_SESSION['username'],
+                'action' => 'Marked transaction as done',
             ]);
             $this->sendResponse(true, 'Transaction marked as done');
         } catch (Exception $e) {
