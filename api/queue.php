@@ -481,10 +481,16 @@ WHERE DATE(created_at) = CURDATE()
                 "Please ensure timely arrival.\n\n" .
                 "Thank you for your cooperation.";
             // Send SMS via Semaphore API
+<<<<<<< HEAD
 
             $apiKey = "6c557df5b5cfb79a20287af09f6f85af"; // Replace with your API key
             $url = "https://semaphore.co/api/v4/messages";
 
+=======
+            $apiKey = "6c557df5b5cfb79a20287af09f6f85af"; // Replace with your API key
+            $url = "https://semaphore.co/api/v4/messages";
+
+>>>>>>> 5ce4d66d7589ef1c853f0568d96d2ee239edf02c
             $url = 'https://api.semaphore.co/api/v4/messages';
             $number = $driver['driver_phone'];
 

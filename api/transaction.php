@@ -900,12 +900,15 @@ class TransactionManager
                 ':id' => $data['transaction_id'],
                 ':created_by' => $_SESSION['username'],
                 ':details' => $data['to_reference'] . ' Transaction diverted' . ' by ' . $_SESSION['username']
+<<<<<<< HEAD
             ]);
             $stmt = $this->conn->prepare('INSERT INTO user_logs (user_id, username, action) VALUES (:user_id, :username, :action)');
             $stmt->execute([
                 'user_id' => $_SESSION['id'],
                 'username' => $_SESSION['username'],
                 'action' => 'Transaction Diverted',
+=======
+>>>>>>> 5ce4d66d7589ef1c853f0568d96d2ee239edf02c
             ]);
             return $this->sendResponse(true, 'Transaction diverted successfully');
         } catch (PDOException $e) {
