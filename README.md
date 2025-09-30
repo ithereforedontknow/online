@@ -108,7 +108,9 @@ PDF Generation
 
 PDFs are generated via the methods provided in the code, leveraging the functionality of FPDF.
 
-Scripts / Commands
+---
+
+## Scripts / Commands
 
     queue.php: Executes and manages background processing jobs.
 
@@ -116,7 +118,9 @@ Scripts / Commands
 
     Additional CLI or web scripts may exist in api/ or includes/.
 
-Contribution 🤝
+---
+
+## Contribution 🤝
 
 You are welcome to contribute! Please feel free to submit:
 
@@ -126,7 +130,9 @@ You are welcome to contribute! Please feel free to submit:
 
     Pull requests with improvements
 
-Submission Guidelines
+---
+
+## Submission Guidelines
 
 Before submitting, please:
 
@@ -136,7 +142,9 @@ Before submitting, please:
 
     Document any public-facing or API changes.
 
-License 📄
+---
+
+## License 📄
 
 (License Not Specified) — Please insert your preferred license here (e.g., MIT, GPL, etc.) to inform users of the terms under which this project can be used and distributed.
 
@@ -145,3 +153,4 @@ Acknowledgments & Notes
     This project utilizes the FPDF library for PDF generation.
 
     The project is composed primarily of PHP and JavaScript code.
+---
